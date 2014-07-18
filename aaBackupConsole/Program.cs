@@ -528,7 +528,7 @@ namespace aaBackupConsole
 
             try
             {
-                log.Debug("Checking and correcting filename");
+                log.Debug("Checking and correcting filename " + BackupFileName + " to use .CAB");
                 // Inspect the filename.  Correct the extension if necessary
                 BackupFileName = System.IO.Path.ChangeExtension(BackupFileName, ".CAB");
 
@@ -568,7 +568,7 @@ namespace aaBackupConsole
         {
             try
             {
-
+                log.Debug("Checking and correcting filename " + BackupFileName + " to use .AAPKG");
                 // Inspect the filename.  Correct the extension if necessary
                 BackupFileName = System.IO.Path.ChangeExtension(BackupFileName, ".AAPKG");
 
@@ -596,6 +596,7 @@ namespace aaBackupConsole
         {
             try
             {
+                log.Debug("Checking and correcting filename " + BackupFileName + " to use .CSV");
                 // Inspect the filename.  Correct the extension if necessary
                 BackupFileName = System.IO.Path.ChangeExtension(BackupFileName, ".CSV");
 
@@ -603,6 +604,13 @@ namespace aaBackupConsole
 
                 // Call complete backup routine
                 _Galaxy.ExportAll(EExportType.exportAsCSV, BackupFileName);
+
+                if (_Galaxy.CommandResult.Successful != true)
+                {
+                    // Failed to retrieve any objects from the query
+                    log.Error("Error while executing BackupCompleteCSV");
+                    return -2;
+                }
 
                 log.Info("Backup CSV Complete");
 
@@ -629,33 +637,48 @@ namespace aaBackupConsole
                 log.Info("Starting Objects Backup to " + _BackupFileName);
 
                 // If the returned length is ok then stuff the objects into an array
-                if (ObjectList.Length == 0)
+                if (ObjectList.Length <= 0)
                 {
                     // Object List not Long Enough
+                    log.Error("Object list length = 0");
                     return -3;
                 }
 
                 // Take the comma Separated values and split them into an array
                 ObjectArray = ObjectList.Split(',');
 
+                log.Debug("QueryObjectsByName for Templates");
                 // Now get the template Objects into a GObjects set
                 GalaxyObjects = _Galaxy.QueryObjectsByName(EgObjectIsTemplateOrInstance.gObjectIsTemplate, ref ObjectArray);
 
+                if (_Galaxy.CommandResult.Successful != true)
+                {
+                    // Failed to retrieve any objects from the query
+                    log.Error("Error while querying templates by tagname");
+                    return -5;
+                }
+
+                log.Debug("QueryObjectsByName for Instances");
                 // Get Instance Objects.  We have to do this in two steps b/c we can't query templates and instances at the same time
                 GalaxyObjects.AddFromCollection(_Galaxy.QueryObjectsByName(EgObjectIsTemplateOrInstance.gObjectIsInstance, ref ObjectArray));
 
+                log.Debug("Verify GalaxyObject <> Null, Galaxy Command Success, and Galaxy Objet Count > 0");
                 if ((GalaxyObjects == null) || (_Galaxy.CommandResult.Successful != true) || (GalaxyObjects.count == 0))
                 {
                     // Failed to retrieve any objects from the query
                     log.Error("Failed to retrieve objects to export.");
-                    return -4;
+                    return -5;
                 }
 
-                
-
+                log.Debug("Calling the BackupToFile function");
                 // Perform Backup of the Objects in the Group
-                BackupToFile(ExportType, GalaxyObjects, BackupFileName);
+                if (BackupToFile(ExportType, GalaxyObjects, BackupFileName) != 0)
+                {
+                    log.Error("Error executing BackupToFile");
+                    return -6;
+                }
 
+                // Success
                 return 0;
 
             }
