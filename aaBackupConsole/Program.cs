@@ -59,7 +59,6 @@ namespace aaBackupConsole
                 if (Setup() != 1)
                 {
                     log.Error("Setup Failed");
-                    Console.ReadLine();
                     return;
                 }
 
