@@ -15,7 +15,6 @@ namespace aaBackupConsole
         /// Used for accessing GR functionality
         /// </summary>
         static GRAccessApp _GRAccess;
-
         static IGalaxy _Galaxy;
         static IGalaxies _Galaxies;
 
