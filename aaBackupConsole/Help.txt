@@ -1,0 +1,61 @@
+Command Line Switches
+
+/GRNodeName					Node name for Galaxy Repository (String)
+/Username					Galaxy login username (if not using integrated authentication) (String)
+/Password					Galaxy login password (if not using integrated authentication) (String)
+/BackupFileName				Filename to use if using a single backup file (String)
+/BackupType (String)
+	CompleteCAB						Single file, complete CAB backup.  Same as Galaxy Backup from SMC. (Default if not specified)
+	CompleteAAPKG					Single file, AAPKG export.  Same as selecting Galaxy in IDE and performing AAPKG export.
+	CompleteCSV						Single file, CSV export.  Export all galaxy instances to a single CSV.
+	ObjectsSingleAAPKG				Export a specified list of objects as a single AAPKG file.
+	ObjectsSingleCSV				Export a specified list of objects as a single CSV file.
+	ObjectsSeparateAAPKG			Export a specified list of objects as separate AAPKG files.
+	ObjectsSeparateCSV 				Export a specified list of objects as separate CSV file.
+	AllTemplatesAAPKG				Export all templates as a single AAPKG file.
+	AllInstancesAAPKG				Export all instances as a single AAPKG file.
+	AllInstancesCSV					Export all instances as a single CSV file.
+	AllTemplatesSeparateAAPKG		Export all templates as separate AAPKG files.
+	AllInstancesSeparateAAPKG		Export all instances as separate AAPKG files.
+	AllInstancesSeperateCSV			Export all instances as separate CSV files.
+	FilteredObjectsAAPKG			Export multiples objects as single AAPKG according to the provided filter.
+	FilteredObjectsCSV				Export multiple objects as single CSV according to the provided filter.
+	FilteredObjectsSeparateAAPKG	Export multiples objects as separate AAPKG files according to the provided filter conditions.
+	FilteredObjectsSeparateCSV		Export multiples objects as separate CSV files according to the provided filter conditions.
+/ObjectList					Comma separated list of objects. (String)
+/IncludeConfigVersion		Include the configuration version of the object in the export filename. (Default is FALSE if not specified) (TRUE/FALSE)
+/FilterType					Type of filter to use for specifying list of filtered objects. See below for legal list of filter types.
+	derivedOrInstantiatedFrom
+	basedOn
+	containedBy
+	hostEngineIs
+	belongsToArea
+	assignedTo
+	withinSecurityGroup
+	createdBy
+	lastModifiedBy
+	checkedOutBy
+	namedLike
+	validationStatusIs
+	deploymentStatusIs
+	checkoutStatusIs
+	objectCategoryIs
+	hierarchicalNameLike
+	NameEquals
+	NameSpaceldls
+/Filter						Text of filter use for specifying list of filtered objects.  This should be used in combination with FilterType.
+/PasswordToEncrypt			Clear text password to encrypt.  See usage notes below.
+/EncryptedPassword			Encrypted password to use with galaxy login.  See usage notes below.
+
+Usage Notes
+To specify the value of a command line switch use the form /switch:value.
+	Example:
+	/GRNodeName:localhost
+	
+For string values that might have a space always use "" around the value.
+	Examples:
+	/ObjectList:"aaEncryptionExample,atest,Area_001"
+	/BackupFolder:"c:\backups"
+
+Password Encryption:
+To avoid having to save passwords in clear text the application allows you to specify a clear text password for the argument PasswordToEncrypt.  The application will encrypt the specified password and show the results in a notepad file.  Copy the text and use that as the argument specified for EncryptedPassword.  This will only work for use on the same computer as the encryption algorithm uses unique identifying information from the local computer to generate encryption keys.

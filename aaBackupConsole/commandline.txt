@@ -1,0 +1,1 @@
+/GrNodeName:localhost /GalaxyName:TWTest /backupfilename:c:\test.csv /backuptype:ObjectsSingleCSV /ObjectList:"UserDefined_001,UserDefined_002" /BackupFolder:"c:\backups" /IncludeConfigVersion:true
