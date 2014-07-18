@@ -5,11 +5,15 @@ using System.Text;
 using ArchestrA.GRAccess;
 //using logger;
 using aaEncryption;
+using log4net;
 
 namespace aaBackupConsole
 {
     class Program
     {
+        // First things first, setup logging 
+        private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
         /// <summary>
         /// GR Access Class
         /// Used for accessing GR functionality
@@ -37,23 +41,25 @@ namespace aaBackupConsole
         static string _Filter;
         static string _PasswordToEncrypt;
         static string _EncryptedPassword;
-
+        
         static void Main(string[] args)
         {
         	
             try
             {
+                // Start with the logging
+                log4net.Config.BasicConfigurator.Configure();
+
+                log.Info("Starting aaBackup");
+
                 // First store off the arguments
                 _args = new CommandLine.Utility.Arguments(args);
-
-                //Console.WriteLine("Enter to Continue to Setup");
-                //Console.ReadLine();
                 
                 // First call the setup routine
-                if (Setup() != 0)
+                if (Setup() != 1)
                 {
-                    Console.WriteLine("Setup Failed.");
-                    //a2logger.LogWarning("Setup Failed.  Exiting");
+                    log.Error("Setup Failed");
+                    Console.ReadLine();
                     return;
                 }
 
@@ -107,7 +113,7 @@ namespace aaBackupConsole
             catch (Exception ex)
             {
                 // Log the error
-                //a2logger.LogError(ex.Message);
+                //a2logger.LogError(ex.Message);              
                 Console.Write(ex.Message.ToString());
                 return;
             }
