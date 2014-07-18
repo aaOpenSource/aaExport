@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Collections;
 using System.Text;
 using ArchestrA.GRAccess;
-//using logger;
 using aaEncryption;
 using log4net;
 
@@ -56,9 +55,9 @@ namespace aaBackupConsole
                 _args = new CommandLine.Utility.Arguments(args);
                 
                 // First call the setup routine
-                if (Setup() != 1)
+                if (Setup() != 0)
                 {
-                    log.Error("Setup Failed");
+                    log.Fatal("Setup Failed");
                     return;
                 }
 
@@ -67,16 +66,16 @@ namespace aaBackupConsole
                 // Parse the input parameters
                 if (ParseArguments(args) != 0)
                 {
-                    Console.WriteLine("Parsing Arguments Failed");
+                    log.Fatal("Parsing Arguments Failed");
                     return;
                 }
 
                 // If the user has passed us a password to encrypt then do that and  bail out.
                 if (_PasswordToEncrypt.Length > 0)
                 {
-                    Console.WriteLine("Encrypting Password");
+                    log.Info("Encrypting password");
                     WriteEncryptedPassword(_PasswordToEncrypt);
-                    Console.WriteLine("Encryption Complete");
+                    log.Info("Password encryption complete");
                     return;
                 }
 
@@ -84,9 +83,8 @@ namespace aaBackupConsole
                 // and set it to the current working password
                 if (_EncryptedPassword.Length > 0)
                 {
-                    Console.WriteLine("Decrypted Password");
-                    Console.WriteLine(DecryptPassword(_EncryptedPassword));
-
+                    log.Info("Decrypting password");
+                    
                     // Set the password to the the decrypted password
                     _Password = DecryptPassword(_EncryptedPassword);
                 }
@@ -96,13 +94,13 @@ namespace aaBackupConsole
                 // Attempt to Connect
                 if (Connect() != 0)
                 {
-                    Console.WriteLine("Connect Failed");
+                    log.Fatal("Connect Failed");
                     return;
                 }
 
                 if (PerformBackup(_BackupType) != 0)
                 {
-                    Console.WriteLine("Backup Failed");
+                    log.Fatal("Backup Failed");
                 }
 
                 Console.WriteLine("Enter to Continue");
@@ -113,7 +111,7 @@ namespace aaBackupConsole
             {
                 // Log the error
                 //a2logger.LogError(ex.Message);              
-                Console.Write(ex.Message.ToString());
+                log.Error(ex.Message.ToString());
                 return;
             }
             finally
@@ -148,10 +146,8 @@ namespace aaBackupConsole
                 return 0;
             }
             catch (Exception ex)
-            {
-                // Log the Error
-                //a2logger.LogError(ex.Message);
-                Console.Write(ex.Message.ToString());
+            {                
+                log.Error(ex.Message.ToString());
 
                 // Return an error code
                 return -1;
@@ -209,11 +205,6 @@ namespace aaBackupConsole
                 {
                     return -2;
                 }
-                // Set to default if return is blank
-                //if (_BackupType == "")
-                //{
-                //    _BackupType = "CompleteCAB";
-                //}
 
 /*                
 				NOT USED - TODO: Need to figure out what the intended purpose of this was!
@@ -228,11 +219,6 @@ namespace aaBackupConsole
                 {
                     return -2;
                 }
-
-                //if (_IncludeConfigVersion == "")
-                //{
-                //    _IncludeConfigVersion = "false";
-                //}
 
                 if (CheckAndSetParameters(ref _FilterType, "FilterType", CommandLine, true) != 0)
                 {
@@ -254,12 +240,12 @@ namespace aaBackupConsole
                     return -2;
                 }
 
-
+                // Success
                 return 0;
             }
             catch (Exception ex)
             {
-                Console.Write(ex.Message.ToString());
+                log.Error(ex.Message.ToString());
                 return -1;
             }
         }
@@ -276,19 +262,22 @@ namespace aaBackupConsole
         {
             try
             {
+                log.Debug("Verifying parameter " + ParameterName + " is not null");
                 // Verify the parameter is present
                 if (CommandLine[ParameterName] != null)
                 {
                     // Set the variable if present
                     ParameterVariable = CommandLine[ParameterName].ToString();
+                    log.Debug("Set " + ParameterName + " to " + ParameterVariable);
                 }
                 else
                 {
+                    log.Debug("Considering allowempty");
                     // If we are not allowing empties, then error.
                     if (!AllowEmpty)
                     {
                         // Warn the user the parameter is missing
-                        Console.WriteLine("Missing parameter value for " + ParameterName);
+                        log.Error("Missing parameter value for " + ParameterName);
 
                         // Return an error code
                         return -2;
@@ -297,14 +286,17 @@ namespace aaBackupConsole
                     {
                         // Set the return to an empty string
                         ParameterVariable = DefaultValue;
+                        log.Debug("Set " + ParameterName + " to default value of " + ParameterVariable);
                     }
                 }
-                
+
+                log.Debug("Returning Success");
+                // Success
                 return 0;
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message.ToString());
+                log.Error(ex.Message.ToString());
                 return -1;
             }
         }
@@ -341,7 +333,7 @@ namespace aaBackupConsole
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.ToString());
+                log.Error(ex.ToString());
             }
             finally
             {
@@ -372,7 +364,7 @@ namespace aaBackupConsole
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.ToString());
+                log.Error(ex.ToString());
                 return "";
             }
 
@@ -388,41 +380,45 @@ namespace aaBackupConsole
         {
             try
             {
+
+                log.Debug("Retrieving Galaxies for " + _GRNodeName);
                 // Get a list of the available galaxies
                 _Galaxies = _GRAccess.QueryGalaxies(_GRNodeName);
 
+                log.Debug("Getting Galaxy Reference for " + _GalaxyName);
                 //Get a reference to the Galaxy
                 _Galaxy = _Galaxies[_GalaxyName];
 
+                log.Debug("Checking for Success");
                 // Check to make sure we have a good reference to the Galaxy
                 if (_Galaxy == null || !_GRAccess.CommandResult.Successful)
                 {
-                    Console.WriteLine(_GalaxyName + " is not a legal Galaxy.");
+                    log.Error(_GalaxyName + " is not a legal Galaxy.");
                     return -3;
                 }
 
-                // Attemp to Login
+                log.Debug("Logging in with Username " + _Username);
+                // Attempt to Login
                 _Galaxy.Login(_Username, _Password);
-                //_Galaxy.Login("", "");
-                //TODO:Revisit login b/c all logins seems to pass
-                
+
+                log.Debug("Checking for login success");
                 //Check for success
                 if (!_Galaxy.CommandResult.Successful)
                 {
-                    Console.WriteLine("Galaxy Login Failed");
+                    log.Error("Galaxy Login Failed");
                     return -2;
                 }
 
                 // If we made it to hear we're good!
+                log.Info("Login Succeeded");
 
-                Console.WriteLine("Login Succeeded");
-
+                // Return control
                 return 0;
 
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message.ToString());
+                log.Error(ex.Message.ToString());
                 return -1;
             }
         }
@@ -514,7 +510,7 @@ namespace aaBackupConsole
             }
             catch (Exception ex)
             {
-                Console.Write(ex.Message.ToString());
+                log.Error(ex.Message.ToString());
                 return -1;
             }
 
@@ -532,30 +528,33 @@ namespace aaBackupConsole
 
             try
             {
+                log.Debug("Checking and correcting filename");
                 // Inspect the filename.  Correct the extension if necessary
                 BackupFileName = System.IO.Path.ChangeExtension(BackupFileName, ".CAB");
 
                 // Get the current PID
                 ProcessId = System.Diagnostics.Process.GetCurrentProcess().Id;
+                log.Debug("Got Process ID " + ProcessId.ToString());
 
                 if (ProcessId == 0)
                 {
-                    Console.WriteLine("Inavlid ProcessID");
+                    log.Error("Inavlid ProcessID");
                     return -2;
                 }
 
-                Console.WriteLine("Starting CAB Backup to " + BackupFileName);
+                log.Info("Starting CAB Backup to " + BackupFileName);
 
                 // Call complete backup routine
                 _Galaxy.Backup(ProcessId, BackupFileName, _GRNodeName, _GalaxyName);
-                
-                Console.WriteLine("Backup CAB Complete");
 
+                log.Info("Backup CAB Complete");
+                
+                // Success
                 return 0;
             }
             catch (Exception ex)
             {
-                Console.Write(ex.Message.ToString());
+                log.Error(ex.Message.ToString());
                 return -1;
             }
 
@@ -573,18 +572,18 @@ namespace aaBackupConsole
                 // Inspect the filename.  Correct the extension if necessary
                 BackupFileName = System.IO.Path.ChangeExtension(BackupFileName, ".AAPKG");
 
-                Console.WriteLine("Starting AAPKG Backup to " + BackupFileName);
+                log.Info("Starting AAPKG Backup to " + BackupFileName);
 
                 // Call complete backup routine
                 _Galaxy.ExportAll(EExportType.exportAsPDF, BackupFileName);
 
-                Console.WriteLine("Backup AAPKG Complete");
+                log.Info("Backup AAPKG Complete");
 
                 return 0;
             }
             catch (Exception ex)
             {
-                Console.Write(ex.Message.ToString());
+                log.Error(ex.Message.ToString());
                 return -1;
             }
         }
@@ -600,18 +599,18 @@ namespace aaBackupConsole
                 // Inspect the filename.  Correct the extension if necessary
                 BackupFileName = System.IO.Path.ChangeExtension(BackupFileName, ".CSV");
 
-                Console.WriteLine("Starting CSV Backup to " + BackupFileName);
+                log.Info("Starting CSV Backup to " + BackupFileName);
 
                 // Call complete backup routine
                 _Galaxy.ExportAll(EExportType.exportAsCSV, BackupFileName);
 
-                Console.WriteLine("Backup CSV Complete");
+                log.Info("Backup CSV Complete");
 
                 return 0;
             }
             catch (Exception ex)
             {
-                Console.Write(ex.Message.ToString());
+                log.Error(ex.Message.ToString());
                 return -1;
             }
         }
@@ -627,7 +626,7 @@ namespace aaBackupConsole
             
             try
             {
-                Console.WriteLine("Starting Objects Backup to " + _BackupFileName);
+                log.Info("Starting Objects Backup to " + _BackupFileName);
 
                 // If the returned length is ok then stuff the objects into an array
                 if (ObjectList.Length == 0)
@@ -648,7 +647,7 @@ namespace aaBackupConsole
                 if ((GalaxyObjects == null) || (_Galaxy.CommandResult.Successful != true) || (GalaxyObjects.count == 0))
                 {
                     // Failed to retrieve any objects from the query
-                    Console.WriteLine("Failed to retrieve objects to export.");
+                    log.Error("Failed to retrieve objects to export.");
                     return -4;
                 }
 
@@ -662,7 +661,7 @@ namespace aaBackupConsole
             }
             catch (Exception ex)
             {
-                Console.Write(ex.Message.ToString());
+                log.Error(ex.Message.ToString());
                 return -1;
             }
         }
@@ -719,7 +718,7 @@ namespace aaBackupConsole
                     if ((GalaxyObjects == null) || (_Galaxy.CommandResult.Successful != true) || (GalaxyObjects.count == 0))
                     {
                         // Failed to retrieve any objects from the query
-                        Console.WriteLine("Failed to retrieve " + Item + " to export.");
+                        log.Error("Failed to retrieve " + Item + " to export.");
                     }
                     else
                     {
@@ -733,7 +732,7 @@ namespace aaBackupConsole
             }
             catch (Exception ex)
             {
-                Console.Write(ex.Message.ToString());
+                log.Error(ex.Message.ToString());
                 return -1;
             }
         }
@@ -775,7 +774,7 @@ namespace aaBackupConsole
                 if ((GalaxyObjects == null) || (_Galaxy.CommandResult.Successful != true) || GalaxyObjects.count == 0)
                 {
                     // Failed to retrieve any objects from the query
-                    Console.WriteLine("Failed to retrieve objects to export.");
+                    log.Error("Failed to retrieve objects to export.");
                     return -4;
                 }
 
@@ -796,7 +795,7 @@ namespace aaBackupConsole
             }
             catch (Exception ex)
             {
-                Console.Write(ex.Message.ToString());
+                log.Error(ex.Message.ToString());
                 return -1;
             }
         }
@@ -815,27 +814,27 @@ namespace aaBackupConsole
                 // Make sure we have the right extension on the backup file
                 BackupFileName = System.IO.Path.ChangeExtension(BackupFileName, CorrectExtension(ExportType));
 
-                Console.WriteLine("Backing up to " + BackupFileName);
+                log.Info("Backing up to " + BackupFileName);
 
                 // Perform the actual export
                 GalaxyObjects.ExportObjects(ExportType, BackupFileName);
 
                 if (GalaxyObjects.CommandResults.CompletelySuccessful != true)
                 {
-                    Console.WriteLine("Export not completely successful");
-                    Console.WriteLine(GalaxyObjects.CommandResults.ToString());
+                    log.Error("Export not completely successful");
+                    log.Error(GalaxyObjects.CommandResults.ToString());
                     return -2;
                 }
                 else
                 {
-                    Console.WriteLine("Backup to " + BackupFileName + " succeeded.");
+                    log.Info("Backup to " + BackupFileName + " succeeded.");
                 }
 
                 return 0;
             }
             catch(Exception ex)
             {
-                Console.WriteLine(ex.ToString());
+                log.Error(ex.ToString());
                 return -1;
             }
         }
@@ -878,7 +877,7 @@ namespace aaBackupConsole
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.ToString());
+                log.Error(ex.ToString());
                 return -1;
             }
         }
@@ -912,7 +911,7 @@ namespace aaBackupConsole
                 // Double check that we have the folder.  If it's missing then error out
                 if (!System.IO.Directory.Exists(BackupFolderName))
                 {
-                    Console.WriteLine("Missing Directory " + BackupFolderName);
+                    log.Error("Missing Directory " + BackupFolderName);
                     return -2;
                 }
 
@@ -958,7 +957,7 @@ namespace aaBackupConsole
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.ToString());
+                log.Error(ex.ToString());
                 return -1;
             }
         }
@@ -982,7 +981,7 @@ namespace aaBackupConsole
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.ToString());
+                log.Error(ex.ToString());
                 return null;
             }
         }
