@@ -46,6 +46,7 @@ namespace aaBackupConsole
         static string _PasswordToEncrypt;
         static string _EncryptedPassword;
         static string _ChangeLogTimestampStartFilter;
+        static string _CustomSQLSelection;
         
         static CommandLine.Utility.Arguments _args;
         static SqlConnection _SQLConn = new SqlConnection();
@@ -69,9 +70,6 @@ namespace aaBackupConsole
 
                 // Parse the input parameters
                 ParseArguments(args);
-
-                int x = exectest();
-                return;
 
                 // First call the setup routine
                 Setup();
@@ -162,12 +160,8 @@ namespace aaBackupConsole
                 CheckAndSetParameters(ref _ObjectList, "ObjectList", CommandLine, true);
                   
                 /*
-				NOT USED - TODO: Need to figure out what the intended purpose of this ws!
-				
-				if (CheckAndSetParameters(ref _FileDetail, "FileDetail", CommandLine, true) != 0)
-                {
-                    return -2;
-                }
+				NOT USED - TODO: Need to figure out what the intended purpose of this ws!				
+				CheckAndSetParameters(ref _FileDetail, "FileDetail", CommandLine, true);
                 */
 
                 CheckAndSetParameters(ref _IncludeConfigVersion, "IncludeConfigVersion", CommandLine, true, "false");
@@ -176,6 +170,7 @@ namespace aaBackupConsole
                 CheckAndSetParameters(ref _PasswordToEncrypt, "PasswordToEncrypt", CommandLine, true);
                 CheckAndSetParameters(ref _EncryptedPassword, "EncryptedPassword", CommandLine, true);
                 CheckAndSetParameters(ref _ChangeLogTimestampStartFilter, "ChangeLogTimestampStartFilter", CommandLine, true);
+                CheckAndSetParameters(ref _CustomSQLSelection, "CustomSQLSelection", CommandLine, true);
 
                 // Success
                 return 0;
@@ -353,6 +348,87 @@ namespace aaBackupConsole
         }
 
         /// <summary>
+        /// Calculate the correct object list based on multiple arguments
+        /// </summary>
+        /// <returns></returns>
+        private static string FilterObjectList(string ObjectList)
+        {
+            string returnValue;
+            string workingList;
+            
+            // Initalize the return val
+            returnValue = "";
+
+            // First set the object list to the passed object list
+            workingList = ObjectList;
+
+            // Now consider if the user passed any arguments that may later the object list
+            
+            // Key concept is that these functionss are filters, not adders.  So, if you run both filters it will reduce the list, never grow it
+
+            // Change Log Timestamp Filter.. Basically Changes since the passed time
+            if (_ChangeLogTimestampStartFilter !="")
+            {
+                returnValue = GetObjectListForChangeLogAllObjectsAfterTimestampAsCSV(DateTime.Parse(_ChangeLogTimestampStartFilter), ETemplateOrInstance.Both, workingList);
+            }
+
+            //Custom SQL
+            if (_ChangeLogTimestampStartFilter != "")
+            {
+                returnValue = GetObjectListFromCustomSQL(_CustomSQLSelection, ETemplateOrInstance.Both, workingList);
+            }
+
+            log.Debug(returnValue);
+            return returnValue;
+        }
+
+        private static IgObjects FilterGalaxyObjects(IgObjects GalaxyObjects)
+        {
+            //ArrayList galaxyObjectList = new ArrayList();
+
+            List<String> galaxyObjectList = new List<String>();
+            IgObjects returnGalaxyObjects;
+            string workingList = "";
+            string[] ObjectArray;
+            
+            // Get all of the items in the list.  Only good way to do this is 
+            foreach (IgObject GObject in GalaxyObjects)
+            {
+                galaxyObjectList.Add(GObject.Tagname);
+            }
+
+            // Filter the Original List considering the Timestamp Filter
+            if (_ChangeLogTimestampStartFilter != "")
+            {
+                workingList = GetObjectListForChangeLogAllObjectsAfterTimestampAsCSV(DateTime.Parse(_ChangeLogTimestampStartFilter), ETemplateOrInstance.Both, String.Join(",",galaxyObjectList.ToArray()));
+            }
+
+            //Trim the leading and trailing "
+            workingList = workingList.Trim('"');
+
+            // Split the working list in an array of string
+            ObjectArray = workingList.Split(',');
+
+            // Get an empty set of objects to start working with
+            returnGalaxyObjects = GetEmptyIgObjects();
+
+            // Now get the template Objects into a GObjects set
+            returnGalaxyObjects.AddFromCollection(_Galaxy.QueryObjectsByName(EgObjectIsTemplateOrInstance.gObjectIsTemplate,ObjectArray));
+            // Now get the template Objects into a GObjects set
+            returnGalaxyObjects.AddFromCollection(_Galaxy.QueryObjectsByName(EgObjectIsTemplateOrInstance.gObjectIsInstance, ObjectArray));
+
+            // Check for any failures
+            if ((returnGalaxyObjects == null) || (_Galaxy.CommandResult.Successful != true) || returnGalaxyObjects.count == 0)
+            {
+                // Failed to retrieve any objects from the query
+                throw new Exception("Failed to retrieve objects to export.");
+            }
+
+            return returnGalaxyObjects;
+
+        }
+
+        /// <summary>
         /// Perform the actual backup, switchin on the type of backup
         /// </summary>
         /// <returns></returns>
@@ -360,6 +436,7 @@ namespace aaBackupConsole
         {
             try
             {
+
                 // Determine which type of backup and call the appropriate routine
                 switch (BackupType)
                 {
@@ -377,19 +454,19 @@ namespace aaBackupConsole
 
                         //Call the objects AAPKG Backup routine
                     case "ObjectsSingleAAPKG":
-                        return BackupObjectsToFile(EExportType.exportAsPDF, _ObjectList, _BackupFileName);
+                        return BackupObjectsToFile(EExportType.exportAsPDF, FilterObjectList(_ObjectList), _BackupFileName);
 
                     //Call the objects CSV Backup routine
                     case "ObjectsSingleCSV":
-                        return BackupObjectsToFile(EExportType.exportAsCSV, _ObjectList, _BackupFileName);
+                        return BackupObjectsToFile(EExportType.exportAsCSV, FilterObjectList(_ObjectList), _BackupFileName);
 
                     //Exporting all Separate objects into AAPKG's
                     case "ObjectsSeparateAAPKG":
-                        return BackupObjectsToFolder(EExportType.exportAsPDF, _ObjectList,_BackupFolderName);
+                        return BackupObjectsToFolder(EExportType.exportAsPDF, FilterObjectList(_ObjectList), _BackupFolderName);
 
                     //Exporting all Separate objects into CSV's
                     case "ObjectsSeparateCSV":
-                        return BackupObjectsToFolder(EExportType.exportAsCSV,_ObjectList,_BackupFolderName);
+                        return BackupObjectsToFolder(EExportType.exportAsCSV, FilterObjectList(_ObjectList), _BackupFolderName);
 
                     //Export All Templates to an Single AAPKG
                     case "AllTemplatesAAPKG":
@@ -430,8 +507,6 @@ namespace aaBackupConsole
                     //Export Objects Based on Filter Criteria to Separate CSV
                     case "FilteredObjectsSeparateCSV":
                         return BackupBySingleFilter(EExportType.exportAsCSV, "", _BackupFolderName, _FilterType, _Filter, ETemplateOrInstance.Both);
-
-                    // Objects that have changed since a specific timestamp
 
 
                     default:
@@ -517,7 +592,7 @@ namespace aaBackupConsole
             sb.Append(" ");
             sb.Append("Change_Date >='" + TargetTimestamp.ToString("yyyy-MM-dd HH:mm:ss.fff") + "'");
             sb.Append(" ");
-            sb.Append("and Operation_Name in ('CheckInSuccess')");
+            sb.Append("and Operation_Name in ('CheckInSuccess','CreateInstance')");
             sb.Append(" ");
 
             // Add the clauses to limit by template or isntance
@@ -559,31 +634,78 @@ namespace aaBackupConsole
 
         }
 
+        static string GetObjectListForChangeLogAllObjectsAfterTimestampAsCSV(DateTime TargetTimestamp, ETemplateOrInstance ItemTypeSelection = ETemplateOrInstance.Both, string ObjectList = "")
+        {
+            DataTable dt;
+            string returnList;
+
+            // First get the datatable by a SQL query
+            dt = GetSQLData(GetSQLForChangeLogAllObjectsAfterTimestampAsCSV(TargetTimestamp, ItemTypeSelection, ObjectList));
+            
+            // If we have more than one row then fix up the string format
+            if (dt.Rows.Count > 0)
+            {
+                returnList = dt.Rows[0][0].ToString();
+                returnList = "\"" + returnList.Substring(1, returnList.Length - 1) + "\"";
+            }
+            else
+            {
+                returnList = "";
+            }
+
+            log.Debug(returnList);
+            return returnList;
+        }
+
+        static string GetObjectListFromCustomSQL(string SQL, ETemplateOrInstance ItemTypeSelection = ETemplateOrInstance.Both, string ObjectList = "")
+        {
+            DataTable dt;
+            string returnList;
+
+            // First get the datatable by a SQL query
+            dt = GetSQLData(SQL);
+
+            // If we have more than one row then fix up the string format
+            if (dt.Rows.Count > 0)
+            {
+                returnList = dt.Rows[0][0].ToString();
+                returnList = "\"" + returnList.Substring(1, returnList.Length - 1) + "\"";
+            }
+            else
+            {
+                returnList = "";
+            }
+
+            log.Debug(returnList);
+            return returnList;
+
+        }
+
         static int exectest()
 
         {
-            DataTable dt;
-            string val;
+            //DataTable dt;
+            //string val;
 
             //dt = GetSQLData(GetSQLForChangeLogAllObjectsAfterTimestampAsCSV(new System.DateTime(2013, 01, 01), ETemplateOrInstance.Instance));
+            //val = dt.Rows[0][0].ToString();
+            //dt = GetSQLData(GetSQLForChangeLogAllObjectsAfterTimestampAsCSV(new System.DateTime(2013, 01, 01), ETemplateOrInstance.Template));
             //val = dt.Rows[0][0].ToString();
             //val = "\"" + val.Substring(1, val.Length - 1) + "\"";
             //log.Info(val);
 
 
-            dt = GetSQLData(GetSQLForChangeLogAllObjectsAfterTimestampAsCSV(new System.DateTime(2013, 01, 01), ETemplateOrInstance.Template,"AlarmOnHigh_001,AlarmOnLow_001,AlarmOnLow_002"));
-            if (dt.Rows.Count > 0)
-            { 
-            val = dt.Rows[0][0].ToString();
-            val = "\"" + val.Substring(1, val.Length - 1) + "\"";
-            log.Info(val);
-            }
-            else
-            { log.Info("No Rows"); }
-
-
-            //dt = GetSQLData(GetSQLForChangeLogAllObjectsAfterTimestampAsCSV(new System.DateTime(2013, 01, 01), ETemplateOrInstance.Template));
+            //dt = GetSQLData(GetSQLForChangeLogAllObjectsAfterTimestampAsCSV(new System.DateTime(2013, 01, 01), ETemplateOrInstance.Template,"AlarmOnHigh_001,AlarmOnLow_001,AlarmOnLow_002"));
+            //if (dt.Rows.Count > 0)
+            //{ 
             //val = dt.Rows[0][0].ToString();
+            //val = "\"" + val.Substring(1, val.Length - 1) + "\"";
+            //log.Info(val);
+            //}
+            //else
+            //{ log.Info("No Rows"); }
+
+
             //val = "\"" + val.Substring(1, val.Length - 1) + "\"";
             //log.Info(val);
 
@@ -723,8 +845,7 @@ namespace aaBackupConsole
                 if (ObjectList.Length <= 0)
                 {
                     // Object List not Long Enough
-                    log.Error("Object list length = 0");
-                    return -3;
+                    throw new Exception("Object list length = 0");
                 }
 
                 // Take the comma Separated values and split them into an array
@@ -737,8 +858,7 @@ namespace aaBackupConsole
                 if (_Galaxy.CommandResult.Successful != true)
                 {
                     // Failed to retrieve any objects from the query
-                    log.Error("Error while querying templates by tagname");
-                    return -5;
+                    throw new Exception("Error while querying templates by tagname");
                 }
 
                 log.Debug("QueryObjectsByName for Instances");
@@ -749,16 +869,14 @@ namespace aaBackupConsole
                 if ((GalaxyObjects == null) || (_Galaxy.CommandResult.Successful != true) || (GalaxyObjects.count == 0))
                 {
                     // Failed to retrieve any objects from the query
-                    log.Error("Failed to retrieve objects to export.");
-                    return -5;
+                    throw new Exception("Failed to retrieve objects to export.");
                 }
 
                 log.Debug("Calling the BackupToFile function");
                 // Perform Backup of the Objects in the Group
                 if (BackupToFile(ExportType, GalaxyObjects, BackupFileName) != 0)
                 {
-                    log.Error("Error executing BackupToFile");
-                    return -6;
+                    throw new Exception("Error executing BackupToFile");
                 }
 
                 // Success
@@ -786,8 +904,6 @@ namespace aaBackupConsole
             {   
                 // Instantiate the single Object item array
                 SingleObjectItem = new string[1];
-
-
 
                 // If the returned length is ok then stuff the objects into an array
                 if (ObjectList.Length == 0)
@@ -878,9 +994,11 @@ namespace aaBackupConsole
                 if ((GalaxyObjects == null) || (_Galaxy.CommandResult.Successful != true) || GalaxyObjects.count == 0)
                 {
                     // Failed to retrieve any objects from the query
-                    log.Error("Failed to retrieve objects to export.");
-                    return -4;
+                    throw new Exception("Failed to retrieve objects to export.");
                 }
+
+                
+
 
                 // If we are backing up all items to a single file then make a simple call to export all the objects
                 if (ExecBackupToSingleFile)
@@ -919,14 +1037,15 @@ namespace aaBackupConsole
 
                 log.Info("Backing up to " + BackupFileName);
 
+                // Filter the Objects list
+                GalaxyObjects = FilterGalaxyObjects(GalaxyObjects);
+
                 // Perform the actual export
                 GalaxyObjects.ExportObjects(ExportType, BackupFileName);
 
                 if (GalaxyObjects.CommandResults.CompletelySuccessful != true)
                 {
-                    log.Error("Export not completely successful");
-                    log.Error(GalaxyObjects.CommandResults.ToString());
-                    return -2;
+                    throw new Exception(GalaxyObjects.CommandResults.ToString());
                 }
                 else
                 {
@@ -973,15 +1092,12 @@ namespace aaBackupConsole
                 {
                     return BackupToFile(ExportType, GalaxyObjects, BackupFileName);
                 }
-                else
-                {
-                    return -2;
-                }
+
+                return 0;
             }
             catch (Exception ex)
             {
-                log.Error(ex.ToString());
-                return -1;
+                throw ex;
             }
         }
 
@@ -1014,9 +1130,11 @@ namespace aaBackupConsole
                 // Double check that we have the folder.  If it's missing then error out
                 if (!System.IO.Directory.Exists(BackupFolderName))
                 {
-                    log.Error("Missing Directory " + BackupFolderName);
-                    return -2;
+                    throw new Exception("Missing Directory " + BackupFolderName);
                 }
+
+                // Filter the Objects list
+                GalaxyObjects = FilterGalaxyObjects(GalaxyObjects);
 
                 //Need to iterate through the the objects
                 foreach(IgObject Item in GalaxyObjects)
