@@ -5,13 +5,17 @@ using System.Text;
 using ArchestrA.GRAccess;
 using aaEncryption;
 using log4net;
-
-
+using System.Data;
+using System.Data.Sql;
+using System.Data.SqlClient;
 
 namespace aaBackupConsole
 {
     class Program
     {
+
+        #region Declarations
+
         // First things first, setup logging 
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
@@ -35,14 +39,21 @@ namespace aaBackupConsole
         static string _BackupFileName;
         static string _BackupFolderName;
         static string _ObjectList;
-        static string _BackupType;
-        static CommandLine.Utility.Arguments _args;
+        static string _BackupType;        
         static string _IncludeConfigVersion;
         static string _FilterType;
         static string _Filter;
         static string _PasswordToEncrypt;
         static string _EncryptedPassword;
+        static string _ChangeLogTimestampStartFilter;
         
+        static CommandLine.Utility.Arguments _args;
+        static SqlConnection _SQLConn = new SqlConnection();
+
+        #endregion
+
+        #region Core
+
         static void Main(string[] args)
         {
         	
@@ -55,22 +66,15 @@ namespace aaBackupConsole
 
                 // First store off the arguments
                 _args = new CommandLine.Utility.Arguments(args);
-                
-                // First call the setup routine
-                if (Setup() != 0)
-                {
-                    log.Fatal("Setup Failed");
-                    return;
-                }
-
-                //Console.WriteLine("Parsing Arguments");
 
                 // Parse the input parameters
-                if (ParseArguments(args) != 0)
-                {
-                    log.Fatal("Parsing Arguments Failed");
-                    return;
-                }
+                ParseArguments(args);
+
+                int x = exectest();
+                return;
+
+                // First call the setup routine
+                Setup();
 
                 // If the user has passed us a password to encrypt then do that and  bail out.
                 if (_PasswordToEncrypt.Length > 0)
@@ -91,30 +95,16 @@ namespace aaBackupConsole
                     _Password = DecryptPassword(_EncryptedPassword);
                 }
 
-                //Console.WriteLine("Enter to Continue to Login");
-
                 // Attempt to Connect
-                if (Connect() != 0)
-                {
-                    log.Fatal("Connect Failed");
-                    return;
-                }
+                Connect();
 
-                if (PerformBackup(_BackupType) != 0)
-                {
-                    log.Fatal("Backup Failed");
-                }
-
-                Console.WriteLine("Enter to Continue");
-                Console.ReadLine();
+                // Execute the Backup
+                PerformBackup(_BackupType);
 
             }
             catch (Exception ex)
             {
-                // Log the error
-                //a2logger.LogError(ex.Message);              
-                log.Error(ex.Message.ToString());
-                return;
+                log.Error(ex);
             }
             finally
             {
@@ -128,19 +118,16 @@ namespace aaBackupConsole
                 {
                     _GRAccess = null;
                 }
-
-                //Console.WriteLine("Enter to Continue to Finish");
-                //Console.ReadLine();
+                
+                Console.WriteLine("Enter to Continue to Finish");
+                Console.ReadLine();
             }
         }
 
         private static int Setup()
         {
             try
-            {
-                // Set the application identity
-                //a2logger.LogSetIdentityName("aaBackupConsole");
-                
+            {                
                 // Instantiate the GR Access App
                 _GRAccess = new GRAccessApp();
 
@@ -148,11 +135,8 @@ namespace aaBackupConsole
                 return 0;
             }
             catch (Exception ex)
-            {                
-                log.Error(ex.Message.ToString());
-
-                // Return an error code
-                return -1;
+            {
+                throw ex;
             }
         }
 
@@ -168,87 +152,37 @@ namespace aaBackupConsole
                 CommandLine.Utility.Arguments CommandLine = new CommandLine.Utility.Arguments(args);
                 
                 // Verify parameters passed are legal then stuff into variables
-                if (CheckAndSetParameters(ref _GRNodeName, "GRNodeName", CommandLine,true,"localhost") != 0)
-                {
-                    return -2;
-                }
-
-                if (CheckAndSetParameters(ref _GalaxyName, "GalaxyName", CommandLine, true) != 0)
-                {
-                    return -2;
-                }
-
-                if (CheckAndSetParameters(ref _Username, "Username", CommandLine, true,"") != 0)
-                {
-                    return -2;
-                }
-
-                if (CheckAndSetParameters(ref _Password, "Password", CommandLine, true) != 0)
-                {
-                    return -2;
-                }
-
-                if (CheckAndSetParameters(ref _BackupFileName, "BackupFileName", CommandLine, true) != 0)
-                {
-                    return -2;
-                }
-
-                if (CheckAndSetParameters(ref _BackupType, "BackupType", CommandLine, true, "CompleteCAB") != 0)
-                {
-                    return -2;
-                }
-
-                if (CheckAndSetParameters(ref _BackupFolderName, "BackupFolder", CommandLine, true) != 0)
-                {
-                    return -2;
-                }
-
-                if (CheckAndSetParameters(ref _ObjectList, "ObjectList", CommandLine, true) != 0)
-                {
-                    return -2;
-                }
-
-/*                
-				NOT USED - TODO: Need to figure out what the intended purpose of this was!
+                CheckAndSetParameters(ref _GRNodeName, "GRNodeName", CommandLine,true,"localhost");
+                CheckAndSetParameters(ref _GalaxyName, "GalaxyName", CommandLine, true);                
+                CheckAndSetParameters(ref _Username, "Username", CommandLine, true,"");                
+                CheckAndSetParameters(ref _Password, "Password", CommandLine, true);                
+                CheckAndSetParameters(ref _BackupFileName, "BackupFileName", CommandLine, true);                
+                CheckAndSetParameters(ref _BackupType, "BackupType", CommandLine, true, "CompleteCAB");                
+                CheckAndSetParameters(ref _BackupFolderName, "BackupFolder", CommandLine, true);                
+                CheckAndSetParameters(ref _ObjectList, "ObjectList", CommandLine, true);
+                  
+                /*
+				NOT USED - TODO: Need to figure out what the intended purpose of this ws!
 				
 				if (CheckAndSetParameters(ref _FileDetail, "FileDetail", CommandLine, true) != 0)
                 {
                     return -2;
                 }
-*/
+                */
 
-                if (CheckAndSetParameters(ref _IncludeConfigVersion, "IncludeConfigVersion", CommandLine, true, "false") != 0)
-                {
-                    return -2;
-                }
-
-                if (CheckAndSetParameters(ref _FilterType, "FilterType", CommandLine, true) != 0)
-                {
-                    return -2;
-                }
-
-                if (CheckAndSetParameters(ref _Filter, "Filter", CommandLine, true) != 0)
-                {
-                    return -2;
-                }
-
-                if (CheckAndSetParameters(ref _PasswordToEncrypt, "PasswordToEncrypt", CommandLine, true) != 0)
-                {
-                    return -2;
-                }
-
-                if (CheckAndSetParameters(ref _EncryptedPassword, "EncryptedPassword", CommandLine, true) != 0)
-                {
-                    return -2;
-                }
+                CheckAndSetParameters(ref _IncludeConfigVersion, "IncludeConfigVersion", CommandLine, true, "false");
+                CheckAndSetParameters(ref _FilterType, "FilterType", CommandLine, true);
+                CheckAndSetParameters(ref _Filter, "Filter", CommandLine, true);
+                CheckAndSetParameters(ref _PasswordToEncrypt, "PasswordToEncrypt", CommandLine, true);
+                CheckAndSetParameters(ref _EncryptedPassword, "EncryptedPassword", CommandLine, true);
+                CheckAndSetParameters(ref _ChangeLogTimestampStartFilter, "ChangeLogTimestampStartFilter", CommandLine, true);
 
                 // Success
                 return 0;
             }
             catch (Exception ex)
             {
-                log.Error(ex.Message.ToString());
-                return -1;
+                throw ex;
             }
         }
 
@@ -279,10 +213,7 @@ namespace aaBackupConsole
                     if (!AllowEmpty)
                     {
                         // Warn the user the parameter is missing
-                        log.Error("Missing parameter value for " + ParameterName);
-
-                        // Return an error code
-                        return -2;
+                        throw new Exception("Missing parameter value for " + ParameterName);
                     }
                     else
                     {
@@ -298,8 +229,7 @@ namespace aaBackupConsole
             }
             catch (Exception ex)
             {
-                log.Error(ex.Message.ToString());
-                return -1;
+                throw ex;
             }
         }
 
@@ -335,7 +265,7 @@ namespace aaBackupConsole
             }
             catch (Exception ex)
             {
-                log.Error(ex.ToString());
+                throw ex;
             }
             finally
             {
@@ -366,13 +296,11 @@ namespace aaBackupConsole
             }
             catch (Exception ex)
             {
-                log.Error(ex.ToString());
-                return "";
+                throw ex;                
             }
 
 
         }
-
 
         /// <summary>
         /// Attempt to make a connection to the Galaxy
@@ -420,8 +348,7 @@ namespace aaBackupConsole
             }
             catch (Exception ex)
             {
-                log.Error(ex.Message.ToString());
-                return -1;
+                throw ex;
             }
         }
 
@@ -504,6 +431,9 @@ namespace aaBackupConsole
                     case "FilteredObjectsSeparateCSV":
                         return BackupBySingleFilter(EExportType.exportAsCSV, "", _BackupFolderName, _FilterType, _Filter, ETemplateOrInstance.Both);
 
+                    // Objects that have changed since a specific timestamp
+
+
                     default:
                         break;
                 }
@@ -512,13 +442,167 @@ namespace aaBackupConsole
             }
             catch (Exception ex)
             {
-                log.Error(ex.Message.ToString());
-                return -1;
+                throw ex;
             }
 
         }
 
-#region "Backup Routines"
+        #endregion
+
+        #region SQL Data
+
+        private static DataTable GetSQLData(string SQLQuery)
+        {
+            DataTable returnDataTable;
+
+            try
+            {
+
+                // Check the connection
+                if (_SQLConn.State != ConnectionState.Open)
+                {
+                    _SQLConn.ConnectionString = GetSQLConnectionString();
+                    _SQLConn.Open();
+                }
+
+                if (_SQLConn.State != ConnectionState.Open)
+                {
+                    throw new Exception("SQL Connection Failed to Open");
+                }
+
+                // Setup our command
+                SqlCommand _sqlCmd = new SqlCommand();
+
+                _sqlCmd.Connection = _SQLConn;
+
+                // Set the query text
+                _sqlCmd.CommandType = CommandType.Text;
+                _sqlCmd.CommandText = SQLQuery;
+
+                // Execute
+                returnDataTable = new DataTable("Data");
+                returnDataTable.Load(_sqlCmd.ExecuteReader());
+
+                return returnDataTable;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        private static string GetSQLConnectionString()
+        {
+            // Build the basic connection string
+            // For now we force you to use a trusted connection just becuase it is good security hygiene.  Maybe later
+            // we will consider letting the caller passs 
+
+            return "Server=" + _GRNodeName + ";Database=" + _GalaxyName + ";Trusted_Connection=True;";
+        }
+
+        static string GetSQLForChangeLogAllObjectsAfterTimestampAsCSV(DateTime TargetTimestamp, ETemplateOrInstance ItemTypeSelection = ETemplateOrInstance.Both, string ObjectList = "")
+        {
+
+            StringBuilder sb = new StringBuilder();
+
+            sb.Append("SELECT DISTINCT ',' + Tag_Name ");
+            sb.Append(" ");
+            sb.Append("FROM         dbo.gobject INNER JOIN");
+            sb.Append(" ");
+            sb.Append("dbo.gobject_change_log ON dbo.gobject.gobject_id = dbo.gobject_change_log.gobject_id INNER JOIN");
+            sb.Append(" ");
+            sb.Append("dbo.lookup_operation ON dbo.gobject_change_log.operation_id = dbo.lookup_operation.operation_id");
+            sb.Append(" ");
+            sb.Append(" Where");
+            sb.Append(" ");
+            sb.Append("Change_Date >='" + TargetTimestamp.ToString("yyyy-MM-dd HH:mm:ss.fff") + "'");
+            sb.Append(" ");
+            sb.Append("and Operation_Name in ('CheckInSuccess')");
+            sb.Append(" ");
+
+            // Add the clauses to limit by template or isntance
+            switch (ItemTypeSelection)
+            {
+                case ETemplateOrInstance.Instance:
+                    sb.Append("and is_Template=0");
+                    sb.Append(" ");
+                    break;
+                case ETemplateOrInstance.Template:
+                    sb.Append("and is_Template=1");
+                    sb.Append(" ");
+                    break;
+                default:
+                    //Do Nothing
+                    break;
+            }
+
+            // Consider if the user passed an object list. If so, then use that to filter the results before return
+            if (ObjectList != "")
+            {
+                // Fix up the passed CSV to make SQL like it a little better
+
+                // Add ' at beginning and end
+                ObjectList = "'" + ObjectList + "'";
+                // Add ' around each ,
+                ObjectList = ObjectList.Replace(",", "','");
+                // Remove rogue spaces.  Tagnames will never have spaces
+                ObjectList = ObjectList.Replace(" ", "");
+                sb.Append("and Tag_Name in (" + ObjectList + ")");
+                sb.Append(" ");
+            }
+
+            sb.Append("FOR XML PATH('')");
+
+            log.Info(sb.ToString());
+
+            return sb.ToString();
+
+        }
+
+        static int exectest()
+
+        {
+            DataTable dt;
+            string val;
+
+            //dt = GetSQLData(GetSQLForChangeLogAllObjectsAfterTimestampAsCSV(new System.DateTime(2013, 01, 01), ETemplateOrInstance.Instance));
+            //val = dt.Rows[0][0].ToString();
+            //val = "\"" + val.Substring(1, val.Length - 1) + "\"";
+            //log.Info(val);
+
+
+            dt = GetSQLData(GetSQLForChangeLogAllObjectsAfterTimestampAsCSV(new System.DateTime(2013, 01, 01), ETemplateOrInstance.Template,"AlarmOnHigh_001,AlarmOnLow_001,AlarmOnLow_002"));
+            if (dt.Rows.Count > 0)
+            { 
+            val = dt.Rows[0][0].ToString();
+            val = "\"" + val.Substring(1, val.Length - 1) + "\"";
+            log.Info(val);
+            }
+            else
+            { log.Info("No Rows"); }
+
+
+            //dt = GetSQLData(GetSQLForChangeLogAllObjectsAfterTimestampAsCSV(new System.DateTime(2013, 01, 01), ETemplateOrInstance.Template));
+            //val = dt.Rows[0][0].ToString();
+            //val = "\"" + val.Substring(1, val.Length - 1) + "\"";
+            //log.Info(val);
+
+            //dt = GetSQLData(GetSQLForChangeLogAllObjectsAfterTimestampAsCSV(new System.DateTime(2013, 01, 01), ETemplateOrInstance.Both));
+            //val = dt.Rows[0][0].ToString();
+            //val = "\"" + val.Substring(1, val.Length - 1) + "\"";
+            //log.Info(val);
+
+            //dt = GetSQLData(GetSQLForChangeLogAllObjectsAfterTimestampAsCSV(new System.DateTime(2013, 01, 01)));
+            //val = dt.Rows[0][0].ToString();
+            //val = "\"" + val.Substring(1, val.Length - 1) + "\"";
+            //log.Info(val);
+
+            return 0;
+        }
+
+        #endregion
+
+        #region Backup Routines
 
         /// <summary>
         /// Perform a complete backup generating a CAB
@@ -556,8 +640,7 @@ namespace aaBackupConsole
             }
             catch (Exception ex)
             {
-                log.Error(ex.Message.ToString());
-                return -1;
+                throw ex;                
             }
 
         }
@@ -585,8 +668,7 @@ namespace aaBackupConsole
             }
             catch (Exception ex)
             {
-                log.Error(ex.Message.ToString());
-                return -1;
+                throw ex;                
             }
         }
 
@@ -620,8 +702,7 @@ namespace aaBackupConsole
             }
             catch (Exception ex)
             {
-                log.Error(ex.Message.ToString());
-                return -1;
+                throw ex;                
             }
         }
 
@@ -686,8 +767,7 @@ namespace aaBackupConsole
             }
             catch (Exception ex)
             {
-                log.Error(ex.Message.ToString());
-                return -1;
+                throw ex;              
             }
         }
 
@@ -757,8 +837,7 @@ namespace aaBackupConsole
             }
             catch (Exception ex)
             {
-                log.Error(ex.Message.ToString());
-                return -1;
+                throw ex;                
             }
         }
 
@@ -820,8 +899,7 @@ namespace aaBackupConsole
             }
             catch (Exception ex)
             {
-                log.Error(ex.Message.ToString());
-                return -1;
+                throw ex;            
             }
         }
         
