@@ -77,7 +77,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Classes\CommandLineParser\cCommandLineParser.cs" />
-    <Compile Include="Classes\cObjectList.cs" />
+    <Compile Include="Classes\ObjectList\cObjectList.cs" />
     <Compile Include="Classes\Encryption\cSecurity.cs" />
     <Compile Include="Classes\Encryption\cSimpleAES.cs" />
     <Compile Include="Program.cs" />
@@ -90,9 +90,7 @@
     <None Include="app.config" />
     <None Include="packages.config" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Classes\ObjectList\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
   </ItemGroup>
