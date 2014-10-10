@@ -10,6 +10,7 @@ using System.Data.Sql;
 using System.Data.SqlClient;
 using System.Threading;
 using aaObjectSelection;
+using System.Diagnostics;
 
 
 namespace aaBackupConsole
@@ -383,6 +384,10 @@ namespace aaBackupConsole
 
                     //Call the objects CSV Backup routine
                     case "ObjectsSingleCSV":
+
+                        log.Info(aaObjectSelection.cObjectList.AsDelimitedString(objectList.GetObjectsFromStringList(_ObjectList, true), ','));
+
+
                         return BackupToFile(EExportType.exportAsCSV, objectList.GetObjectsFromStringList(_ObjectList, true), _BackupFileName);
 
                     //Exporting all Separate objects into AAPKG's
