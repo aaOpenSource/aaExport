@@ -133,8 +133,7 @@ namespace aaEncryption
 	        return rm.IV;
 	    }
 #endregion
-
-	    
+        	    
 #region Common Methods
 
 	    /// ----------- The commonly used methods ------------------------------    

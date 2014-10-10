@@ -7,6 +7,8 @@
 * Modified:		28 October 2002
 *
 * Version:		1.0
+ * 
+ * Credit : http://www.codeproject.com/Articles/3111/C-NET-Command-Line-Arguments-Parser
 */
 
 using System;

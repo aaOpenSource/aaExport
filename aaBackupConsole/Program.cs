@@ -418,7 +418,6 @@ namespace aaBackupConsole
                     case "AllInstancesSeparateCSV":
                         return BackupToFolder(EExportType.exportAsCSV, objectList.GetAllInstances(), _BackupFolderName);                        
 
-
                     //Export Objects Based on Filter Criteria to single AAPKG
                     case "FilteredObjectsAAPKG":
                         return BackupToFile(EExportType.exportAsPDF, objectList.GetObjectsFromSingleFilter(_FilterType,_Filter,aaObjectSelection.cObjectList.ETemplateOrInstance.Both,true), _BackupFileName);
