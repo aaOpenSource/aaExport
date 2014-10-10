@@ -384,10 +384,6 @@ namespace aaBackupConsole
 
                     //Call the objects CSV Backup routine
                     case "ObjectsSingleCSV":
-
-                        log.Info(aaObjectSelection.cObjectList.AsDelimitedString(objectList.GetObjectsFromStringList(_ObjectList, true), ','));
-
-
                         return BackupToFile(EExportType.exportAsCSV, objectList.GetObjectsFromStringList(_ObjectList, true), _BackupFileName);
 
                     //Exporting all Separate objects into AAPKG's

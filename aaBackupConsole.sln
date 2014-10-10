@@ -5,10 +5,6 @@ VisualStudioVersion = 12.0.30501.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "aaBackupConsole", "aaBackupConsole\aaBackupConsole.csproj", "{E9AE70CC-695F-4F53-96F4-F1132C7747F0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "aaEncryption", "..\aaEncryption\aaEncryption\aaEncryption.csproj", "{C0B6220D-9BF1-4251-94D5-DB609E072EC6}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "aaObjectSelection", "ObjectSelection\aaObjectSelection.csproj", "{9C24D6BE-3212-4920-AAAB-64838984597D}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,30 +29,6 @@ Global
 		{E9AE70CC-695F-4F53-96F4-F1132C7747F0}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{E9AE70CC-695F-4F53-96F4-F1132C7747F0}.Release|Win32.ActiveCfg = Release|Any CPU
 		{E9AE70CC-695F-4F53-96F4-F1132C7747F0}.Release|x64.ActiveCfg = Release|Any CPU
-		{C0B6220D-9BF1-4251-94D5-DB609E072EC6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C0B6220D-9BF1-4251-94D5-DB609E072EC6}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C0B6220D-9BF1-4251-94D5-DB609E072EC6}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
-		{C0B6220D-9BF1-4251-94D5-DB609E072EC6}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
-		{C0B6220D-9BF1-4251-94D5-DB609E072EC6}.Debug|Win32.ActiveCfg = Debug|Any CPU
-		{C0B6220D-9BF1-4251-94D5-DB609E072EC6}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{C0B6220D-9BF1-4251-94D5-DB609E072EC6}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C0B6220D-9BF1-4251-94D5-DB609E072EC6}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C0B6220D-9BF1-4251-94D5-DB609E072EC6}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
-		{C0B6220D-9BF1-4251-94D5-DB609E072EC6}.Release|Mixed Platforms.Build.0 = Release|Any CPU
-		{C0B6220D-9BF1-4251-94D5-DB609E072EC6}.Release|Win32.ActiveCfg = Release|Any CPU
-		{C0B6220D-9BF1-4251-94D5-DB609E072EC6}.Release|x64.ActiveCfg = Release|Any CPU
-		{9C24D6BE-3212-4920-AAAB-64838984597D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9C24D6BE-3212-4920-AAAB-64838984597D}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9C24D6BE-3212-4920-AAAB-64838984597D}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
-		{9C24D6BE-3212-4920-AAAB-64838984597D}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
-		{9C24D6BE-3212-4920-AAAB-64838984597D}.Debug|Win32.ActiveCfg = Debug|Any CPU
-		{9C24D6BE-3212-4920-AAAB-64838984597D}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{9C24D6BE-3212-4920-AAAB-64838984597D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9C24D6BE-3212-4920-AAAB-64838984597D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{9C24D6BE-3212-4920-AAAB-64838984597D}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
-		{9C24D6BE-3212-4920-AAAB-64838984597D}.Release|Mixed Platforms.Build.0 = Release|Any CPU
-		{9C24D6BE-3212-4920-AAAB-64838984597D}.Release|Win32.ActiveCfg = Release|Any CPU
-		{9C24D6BE-3212-4920-AAAB-64838984597D}.Release|x64.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

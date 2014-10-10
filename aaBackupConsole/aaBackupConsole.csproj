@@ -76,7 +76,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="cCommandLineParser.cs" />
+    <Compile Include="Classes\CommandLineParser\cCommandLineParser.cs" />
+    <Compile Include="Classes\cObjectList.cs" />
+    <Compile Include="Classes\Encryption\cSecurity.cs" />
+    <Compile Include="Classes\Encryption\cSimpleAES.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -88,18 +91,7 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\aaEncryption\aaEncryption\aaEncryption.csproj">
-      <Project>{C0B6220D-9BF1-4251-94D5-DB609E072EC6}</Project>
-      <Name>aaEncryption</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\ObjectSelection\aaObjectSelection.csproj">
-      <Project>{9c24d6be-3212-4920-aaab-64838984597d}</Project>
-      <Name>aaObjectSelection</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="External\" />
-    <Folder Include="Resources\" />
+    <Folder Include="Classes\ObjectList\" />
   </ItemGroup>
   <ItemGroup>
     <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
