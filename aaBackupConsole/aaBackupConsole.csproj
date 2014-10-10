@@ -92,8 +92,13 @@
       <Project>{C0B6220D-9BF1-4251-94D5-DB609E072EC6}</Project>
       <Name>aaEncryption</Name>
     </ProjectReference>
+    <ProjectReference Include="..\ObjectSelection\aaObjectSelection.csproj">
+      <Project>{9c24d6be-3212-4920-aaab-64838984597d}</Project>
+      <Name>aaObjectSelection</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="External\" />
     <Folder Include="Resources\" />
   </ItemGroup>
   <ItemGroup>

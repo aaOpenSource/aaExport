@@ -6,8 +6,8 @@ Command Line Switches
 /BackupFileName				Filename to use if using a single backup file (String)
 /BackupType (String)
 	CompleteCAB						Single file, complete CAB backup.  Same as Galaxy Backup from SMC. (Default if not specified)
-	CompleteAAPKG					Single file, AAPKG export.  Same as selecting Galaxy in IDE and performing AAPKG export.
-	CompleteCSV						Single file, CSV export.  Export all galaxy instances to a single CSV.
+	CompleteAAPKG					Single file, AAPKG export.  Same as selecting Galaxy in IDE and performing AAPKG export.  If you include filter criteria those filters will be applied.
+	CompleteCSV						Single file, CSV export.  Export all galaxy instances to a single CSV. If you include filter criteria those filters will be applied.
 	ObjectsSingleAAPKG				Export a specified list of objects as a single AAPKG file.
 	ObjectsSingleCSV				Export a specified list of objects as a single CSV file.
 	ObjectsSeparateAAPKG			Export a specified list of objects as separate AAPKG files.
