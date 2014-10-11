@@ -9,23 +9,28 @@ using System.Data;
 using System.Data.Sql;
 using System.Data.SqlClient;
 
-namespace aaObjectSelection
-{
-    
+namespace Classes.ObjectList
+{    
     public class cObjectList
     {
+        #region Declarations
+
         private IGalaxy _galaxy;
         private string _grNodeName;
-        private string _ChangeLogTimestampStartFilter = "";
-        private string _CustomSQLSelection = "";
+        private DateTime _changeLogTimestampStartFilter;
+        private string _customSQLSelection = "";
         private SqlConnection _sqlConn = new SqlConnection();
 
         // First things first, setup logging 
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
+        #endregion
+
+        #region constructors
+
         public cObjectList()
         {
-            
+            // Empty constructor
         }
 
         public cObjectList(IGalaxy galaxy)
@@ -38,6 +43,8 @@ namespace aaObjectSelection
             _galaxy = galaxy;
             _grNodeName = grNodeName;
         }
+
+        #endregion
 
         #region Properties
 
@@ -68,15 +75,28 @@ namespace aaObjectSelection
             }       
         }
 
-        public string ChangeLogTimestampStartFilter
+        public DateTime ChangeLogTimestampStartFilter
         {
             get
                 {
-                    return _ChangeLogTimestampStartFilter;
+                    if (_changeLogTimestampStartFilter == null)
+                    {
+                        _changeLogTimestampStartFilter = DateTime.Parse("1/1/1970");
+                    }
+
+                    return _changeLogTimestampStartFilter;
                 }
             set
             {
-                _ChangeLogTimestampStartFilter = value;
+                if (value == null)
+                {
+                    _changeLogTimestampStartFilter = DateTime.Parse("1/1/1970");
+                }
+                else
+                {
+                    _changeLogTimestampStartFilter = value;
+                }
+                
             }
         }
 
@@ -85,12 +105,12 @@ namespace aaObjectSelection
 
             get
             {
-                return _CustomSQLSelection;
+                return _customSQLSelection;
             }
 
             set
             {
-                _CustomSQLSelection = value;
+                _customSQLSelection = value;
             }
         }
 
@@ -338,143 +358,6 @@ namespace aaObjectSelection
 
         #endregion
 
-
-
-        #region Utilities
-
-        /// <summary>
-        /// Return an EConditionType when given a string that maps to the condition type 
-        /// </summary>
-        /// <param name="ConditionType"></param>
-        /// <returns></returns>
-        private EConditionType ConditionType(String ConditionType)
-        {
-            // Just do a big switch case on all the different kinds, return 
-            // the correct reference
-            switch (ConditionType)
-            {
-                case ("derivedOrInstantiatedFrom"): return EConditionType.derivedOrInstantiatedFrom;
-                case ("basedOn"): return EConditionType.basedOn;
-                case ("containedBy"): return EConditionType.containedBy;
-                case ("hostEngineIs"): return EConditionType.hostEngineIs;
-                case ("belongsToArea"): return EConditionType.belongsToArea;
-                case ("assignedTo"): return EConditionType.assignedTo;
-                case ("withinSecurityGroup"): return EConditionType.withinSecurityGroup;
-                case ("createdBy"): return EConditionType.createdBy;
-                case ("lastModifiedBy"): return EConditionType.lastModifiedBy;
-                case ("checkedOutBy"): return EConditionType.checkedOutBy;
-                case ("namedLike"): return EConditionType.namedLike;
-                case ("validationStatusIs"): return EConditionType.validationStatusIs;
-                case ("deploymentStatusIs"): return EConditionType.deploymentStatusIs;
-                case ("checkoutStatusIs"): return EConditionType.checkoutStatusIs;
-                case ("objectCategoryIs"): return EConditionType.objectCategoryIs;
-                case ("hierarchicalNameLike"): return EConditionType.hierarchicalNameLike;
-                case ("NameEquals"): return EConditionType.NameEquals;
-                case ("NameSpaceldls"): return EConditionType.NameSpaceIdIs;
-                default: return 0;
-            }
-        }
-        
-        /// <summary>
-        /// Filter the object list based on custom filter information passed
-        /// </summary>
-        /// <returns></returns>
-        private string ApplyCustomFilters(string ObjectList)
-        {
-            string returnValue;
-            string workingList;
-
-            // Initalize the return val
-            returnValue = "";
-
-            // First set the object list to the passed object list
-            workingList = ObjectList;
-
-            // Now consider if the user passed any arguments that may later the object list
-
-            // Key concept is that these functionss are filters, not adders.  So, if you run both filters it will reduce the list, never grow it
-
-            // Change Log Timestamp Filter.. Basically Changes since the passed time
-            if (_ChangeLogTimestampStartFilter != "")
-            {
-                workingList = GetObjectListForChangeLogAllObjectsAfterTimestampAsCSV(DateTime.Parse(_ChangeLogTimestampStartFilter), ETemplateOrInstance.Both, workingList);
-            }
-
-            //Custom SQL
-            if (_CustomSQLSelection != "")
-            {
-                workingList = GetObjectListFromCustomSQL(_CustomSQLSelection, ETemplateOrInstance.Both, workingList);
-            }
-
-            //Trim the leading and trailing "
-            workingList = workingList.Trim('"');
-
-            returnValue = workingList;
-
-            log.Debug(returnValue);
-            return returnValue;
-        }
-
-        /// <summary>
-        /// Filter the Galaxy object list based on custom filter information passed
-        /// </summary>
-        /// <returns></returns>
-        private IgObjects ApplyCustomFilters(IgObjects GalaxyObjects)
-        {
-            List<String> galaxyObjectList = new List<String>();
-            IgObjects returnGalaxyObjects;
-            string workingList = "";
-            string[] ObjectArray;
-            
-            // Get all of the items in the list.  Only good way to do this is 
-            foreach (IgObject GObject in GalaxyObjects)
-            {
-                galaxyObjectList.Add(GObject.Tagname);
-            }
-
-            // Set the worklist to the beginning value which is all objects
-            workingList = String.Join(",", galaxyObjectList.ToArray());
-
-            // Filter the Original List considering the Timestamp Filter
-            if (_ChangeLogTimestampStartFilter != "")
-            {
-                workingList = GetObjectListForChangeLogAllObjectsAfterTimestampAsCSV(DateTime.Parse(_ChangeLogTimestampStartFilter), ETemplateOrInstance.Both, workingList);
-            }
-
-            //Custom SQL
-            if (_CustomSQLSelection != "")
-            {
-                workingList = GetObjectListFromCustomSQL(_CustomSQLSelection, ETemplateOrInstance.Both, workingList);
-            }
-
-            //Trim the leading and trailing "
-            workingList = workingList.Trim('"');
-
-            // Split the working list in an array of string
-            ObjectArray = workingList.Split(',');
-
-            // Get an empty set of objects to start working with
-            returnGalaxyObjects = GetEmptyIgObjects();
-
-            // Now get the template Objects into a GObjects set
-            returnGalaxyObjects.AddFromCollection(_galaxy.QueryObjectsByName(EgObjectIsTemplateOrInstance.gObjectIsTemplate, ObjectArray));
-
-            // Now get the template Objects into a GObjects set
-            returnGalaxyObjects.AddFromCollection(_galaxy.QueryObjectsByName(EgObjectIsTemplateOrInstance.gObjectIsInstance, ObjectArray));
-
-            // Check for any failures
-            if ((returnGalaxyObjects == null) || (_galaxy.CommandResult.Successful != true) || returnGalaxyObjects.count == 0)
-            {
-                // Failed to retrieve any objects from the query
-                throw new Exception("Failed to retrieve objects to export.");
-            }
-
-            return returnGalaxyObjects;
-
-        }
-
-        #endregion
-
         #region SQL Data
 
         private DataTable GetSQLData(string SQLQuery)
@@ -524,7 +407,7 @@ namespace aaObjectSelection
             // we will consider letting the caller pass sql creds 
             /// TODO: Let user pass SQL creds to SQL Connection
 
-            return "Server=" + this.GRNodeName + ";Database=" + this.Galaxy.Name +";Trusted_Connection=True;";
+            return "Server=" + this.GRNodeName + ";Database=" + this.Galaxy.Name + ";Trusted_Connection=True;";
 
         }
 
@@ -581,8 +464,6 @@ namespace aaObjectSelection
 
             sb.Append("FOR XML PATH('')");
 
-            log.Info(sb.ToString());
-
             return sb.ToString();
 
         }
@@ -606,7 +487,6 @@ namespace aaObjectSelection
                 returnList = "";
             }
 
-            log.Debug(returnList);
             return returnList;
         }
 
@@ -631,6 +511,101 @@ namespace aaObjectSelection
 
             log.Debug(returnList);
             return returnList;
+
+        }
+
+        #endregion
+        
+        #region Utilities
+
+        /// <summary>
+        /// Return an EConditionType when given a string that maps to the condition type 
+        /// </summary>
+        /// <param name="ConditionType"></param>
+        /// <returns></returns>
+        public static EConditionType ConditionType(String ConditionType)
+        {
+            // Just do a big switch case on all the different kinds, return 
+            // the correct reference
+            switch (ConditionType)
+            {
+                case ("derivedOrInstantiatedFrom"): return EConditionType.derivedOrInstantiatedFrom;
+                case ("basedOn"): return EConditionType.basedOn;
+                case ("containedBy"): return EConditionType.containedBy;
+                case ("hostEngineIs"): return EConditionType.hostEngineIs;
+                case ("belongsToArea"): return EConditionType.belongsToArea;
+                case ("assignedTo"): return EConditionType.assignedTo;
+                case ("withinSecurityGroup"): return EConditionType.withinSecurityGroup;
+                case ("createdBy"): return EConditionType.createdBy;
+                case ("lastModifiedBy"): return EConditionType.lastModifiedBy;
+                case ("checkedOutBy"): return EConditionType.checkedOutBy;
+                case ("namedLike"): return EConditionType.namedLike;
+                case ("validationStatusIs"): return EConditionType.validationStatusIs;
+                case ("deploymentStatusIs"): return EConditionType.deploymentStatusIs;
+                case ("checkoutStatusIs"): return EConditionType.checkoutStatusIs;
+                case ("objectCategoryIs"): return EConditionType.objectCategoryIs;
+                case ("hierarchicalNameLike"): return EConditionType.hierarchicalNameLike;
+                case ("NameEquals"): return EConditionType.NameEquals;
+                case ("NameSpaceldls"): return EConditionType.NameSpaceIdIs;
+                default: return 0;
+            }
+        }
+
+        /// <summary>
+        /// Filter the Galaxy object list based on custom filter information passed
+        /// </summary>
+        /// <returns></returns>
+        private IgObjects ApplyCustomFilters(IgObjects GalaxyObjects)
+        {
+            List<String> galaxyObjectList = new List<String>();
+            IgObjects returnGalaxyObjects;
+            string workingList = "";
+            string[] ObjectArray;
+            
+            // Get all of the items in the list.  Only good way to do this is 
+            foreach (IgObject GObject in GalaxyObjects)
+            {
+                galaxyObjectList.Add(GObject.Tagname);
+            }
+
+            // Set the worklist to the beginning value which is all objects
+            workingList = String.Join(",", galaxyObjectList.ToArray());
+
+            // Filter the Original List considering the Timestamp Filter
+            if (this.ChangeLogTimestampStartFilter > DateTime.Parse("1/1/1970"))
+            {
+                workingList = GetObjectListForChangeLogAllObjectsAfterTimestampAsCSV(_changeLogTimestampStartFilter, ETemplateOrInstance.Both, workingList);
+            }
+
+            //Custom SQL
+            if (_customSQLSelection != "")
+            {
+                workingList = GetObjectListFromCustomSQL(_customSQLSelection, ETemplateOrInstance.Both, workingList);
+            }
+
+            //Trim the leading and trailing "
+            workingList = workingList.Trim('"');
+
+            // Split the working list in an array of string
+            ObjectArray = workingList.Split(',');
+
+            // Get an empty set of objects to start working with
+            returnGalaxyObjects = GetEmptyIgObjects();
+
+            // Now get the template Objects into a GObjects set
+            returnGalaxyObjects.AddFromCollection(_galaxy.QueryObjectsByName(EgObjectIsTemplateOrInstance.gObjectIsTemplate, ObjectArray));
+
+            // Now get the template Objects into a GObjects set
+            returnGalaxyObjects.AddFromCollection(_galaxy.QueryObjectsByName(EgObjectIsTemplateOrInstance.gObjectIsInstance, ObjectArray));
+
+            // Check for any failures
+            if ((returnGalaxyObjects == null) || (_galaxy.CommandResult.Successful != true) || returnGalaxyObjects.count == 0)
+            {
+                // Failed to retrieve any objects from the query
+                throw new Exception("Failed to retrieve objects to export.");
+            }
+
+            return returnGalaxyObjects;
 
         }
 

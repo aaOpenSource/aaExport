@@ -2,15 +2,18 @@
 using System.Collections.Generic;
 using System.Collections;
 using System.Text;
-using ArchestrA.GRAccess;
-using aaEncryption;
-using log4net;
 using System.Data;
 using System.Data.Sql;
 using System.Data.SqlClient;
 using System.Threading;
-using aaObjectSelection;
 using System.Diagnostics;
+
+using ArchestrA.GRAccess;
+using log4net;
+
+using Classes.ObjectList;
+using Classes.Encryption;
+using Classes.Backup;
 
 
 namespace aaBackupConsole
@@ -53,8 +56,7 @@ namespace aaBackupConsole
         static string _CustomSQLSelection;
         
         static CommandLine.Utility.Arguments _args;
-        static SqlConnection _SQLConn = new SqlConnection();
-
+        
         #endregion
 
         #region Core
@@ -98,10 +100,29 @@ namespace aaBackupConsole
                 }
 
                 // Attempt to Connect
-                Connect();
+                //Connect();
 
-                // Execute the Backup
-                PerformBackup(_BackupType);
+                // Instantiate the Object and set the parameters
+                var BackupObj = new aaBackup()
+                {
+                    Galaxy = _Galaxy,
+                    GRNodeName = _GRNodeName,
+                    GalaxyName = _GalaxyName,
+                    Username = _Username,
+                    Password = _Password,
+                    BackupFileName = _BackupFileName,
+                    BackupFolderName = _BackupFolderName,
+                    DelimitedObjectList = _ObjectList,
+                    BackupType = _BackupType,
+                    IncludeConfigVersion = (_IncludeConfigVersion == "true") || (_IncludeConfigVersion == "1"),
+                    FilterType = _FilterType,
+                    Filter = _Filter,
+                    ChangeLogTimestampStartFilter = DateTime.Parse(_ChangeLogTimestampStartFilter),
+                    CustomSQLSelection = _CustomSQLSelection                    
+                };
+
+                // Execute the backup
+                BackupObj.CreateBackup();
 
             }
             catch (Exception ex)
@@ -132,7 +153,7 @@ namespace aaBackupConsole
             try
             {                
                 // Instantiate the GR Access App
-                _GRAccess = new GRAccessApp();
+                //_GRAccess = new GRAccessApp();
 
                 // Return success code
                 return 0;
@@ -174,8 +195,8 @@ namespace aaBackupConsole
                 CheckAndSetParameters(ref _Filter, "Filter", CommandLine, true);
                 CheckAndSetParameters(ref _PasswordToEncrypt, "PasswordToEncrypt", CommandLine, true);
                 CheckAndSetParameters(ref _EncryptedPassword, "EncryptedPassword", CommandLine, true);
-                CheckAndSetParameters(ref _ChangeLogTimestampStartFilter, "ChangeLogTimestampStartFilter", CommandLine, true);
-                CheckAndSetParameters(ref _CustomSQLSelection, "CustomSQLSelection", CommandLine, true);
+                CheckAndSetParameters(ref _ChangeLogTimestampStartFilter, "ChangeLogTimestampStartFilter", CommandLine, true, "1/1/1970");
+                CheckAndSetParameters(ref _CustomSQLSelection, "CustomSQLSelection", CommandLine, true,"");
 
                 // Success
                 return 0;
@@ -302,465 +323,7 @@ namespace aaBackupConsole
 
         }
 
-        /// <summary>
-        /// Attempt to make a connection to the Galaxy
-        /// </summary>
-        /// <returns></returns>
-        private static int Connect()
-        {
-            try
-            {
-
-                log.Debug("Retrieving Galaxies for " + _GRNodeName);
-                // Get a list of the available galaxies
-                _Galaxies = _GRAccess.QueryGalaxies(_GRNodeName);
-
-                log.Debug("Getting Galaxy Reference for " + _GalaxyName);
-                //Get a reference to the Galaxy
-                _Galaxy = _Galaxies[_GalaxyName];
-
-                log.Debug("Checking for Success");
-                // Check to make sure we have a good reference to the Galaxy
-                if (_Galaxy == null || !_GRAccess.CommandResult.Successful)
-                {
-                    log.Error(_GalaxyName + " is not a legal Galaxy.");
-                    return -3;
-                }
-
-                log.Debug("Logging in with Username " + _Username);
-                // Attempt to Login
-                _Galaxy.Login(_Username, _Password);
-
-                log.Debug("Checking for login success");
-                //Check for success
-                if (!_Galaxy.CommandResult.Successful)
-                {
-                    log.Error("Galaxy Login Failed");
-                    return -2;
-                }
-
-                // If we made it to hear we're good!
-                log.Info("Login Succeeded");
-
-                // Return control
-                return 0;
-
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-        }
-
-        /// <summary>
-        /// Perform the actual backup, switchin on the type of backup
-        /// </summary>
-        /// <returns></returns>
-        private static int PerformBackup(string BackupType)
-        {
-            try
-            {
-                // Instantiate a new object selection class
-                cObjectList objectList = new cObjectList(_Galaxy, _GRNodeName);
-
-                // Determine which type of backup and call the appropriate routine
-                switch (BackupType)
-                {
-                    // Call the complete backup routine to generate a CAB
-                    case "CompleteCAB":
-                        return BackupCompleteCAB(_BackupFileName);
-
-                        // Call the complete AAPKG backup routine
-                    case "CompleteAAPKG":
-                        return BackupCompleteAAPKG(_BackupFileName);
-
-                    // Call the complete CSV backup routine
-                    case "CompleteCSV":
-                        return BackupCompleteCSV(_BackupFileName);
-
-                    //Call the objects AAPKG Backup routine
-                    case "ObjectsSingleAAPKG":
-                        return BackupToFile(EExportType.exportAsPDF, objectList.GetObjectsFromStringList(_ObjectList, true), _BackupFileName);
-
-                    //Call the objects CSV Backup routine
-                    case "ObjectsSingleCSV":
-                        return BackupToFile(EExportType.exportAsCSV, objectList.GetObjectsFromStringList(_ObjectList, true), _BackupFileName);
-
-                    //Exporting all Separate objects into AAPKG's
-                    case "ObjectsSeparateAAPKG":
-                        return BackupToFolder(EExportType.exportAsPDF, objectList.GetObjectsFromStringList(_ObjectList, true), _BackupFolderName);
-
-                    //Exporting all Separate objects into CSV's
-                    case "ObjectsSeparateCSV":
-                        return BackupToFolder(EExportType.exportAsCSV, objectList.GetObjectsFromStringList(_ObjectList, true), _BackupFolderName);
-
-                    //Export All Templates to an Single AAPKG
-                    case "AllTemplatesAAPKG":
-                        return BackupToFile(EExportType.exportAsPDF, objectList.GetAllTemplates() ,_BackupFileName);
-
-                    //Export all Instances to Single AAPKG
-                    case "AllInstancesAAPKG":
-                        return BackupToFile(EExportType.exportAsPDF, objectList.GetAllInstances(), _BackupFileName);
-
-                    //Export all Instances to Single CSV
-                    case "AllInstancesCSV":
-                        return BackupToFile(EExportType.exportAsCSV, objectList.GetAllInstances(), _BackupFileName);
-
-                    //Export All Templates to Separate AAPKG Files
-                    case "AllTemplatesSeparateAAPKG":
-                        return BackupToFolder(EExportType.exportAsPDF, objectList.GetAllTemplates(), _BackupFolderName);
-
-                    //Export all Instances to Separate AAPKG
-                    case "AllInstancesSeparateAAPKG":
-                        return BackupToFolder(EExportType.exportAsPDF, objectList.GetAllInstances(), _BackupFolderName);                        
-
-                    //Export all Instances to Separate CSV
-                    case "AllInstancesSeparateCSV":
-                        return BackupToFolder(EExportType.exportAsCSV, objectList.GetAllInstances(), _BackupFolderName);                        
-
-                    //Export Objects Based on Filter Criteria to single AAPKG
-                    case "FilteredObjectsAAPKG":
-                        return BackupToFile(EExportType.exportAsPDF, objectList.GetObjectsFromSingleFilter(_FilterType,_Filter,aaObjectSelection.cObjectList.ETemplateOrInstance.Both,true), _BackupFileName);
-
-                    //Export Objects Based on Filter Criteria to single CSV
-                    case "FilteredObjectsCSV":
-                        return BackupToFile(EExportType.exportAsCSV, objectList.GetObjectsFromSingleFilter(_FilterType, _Filter, aaObjectSelection.cObjectList.ETemplateOrInstance.Both, true), _BackupFileName);
-
-                    //Export Objects Based on Filter Criteria to Separate AAPKG
-                    case "FilteredObjectsSeparateAAPKG":
-                        return BackupToFolder(EExportType.exportAsPDF, objectList.GetObjectsFromSingleFilter(_FilterType, _Filter, aaObjectSelection.cObjectList.ETemplateOrInstance.Both, true), _BackupFolderName);
-
-                    //Export Objects Based on Filter Criteria to Separate CSV
-                    case "FilteredObjectsSeparateCSV":
-                        return BackupToFolder(EExportType.exportAsCSV, objectList.GetObjectsFromSingleFilter(_FilterType, _Filter, aaObjectSelection.cObjectList.ETemplateOrInstance.Both, true), _BackupFolderName);
-
-                    default:
-                        break;
-                }
-
-                return 0;
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-
-        }
-
         #endregion
 
-        #region Backup Routines
-
-        /// <summary>
-        /// Perform a complete backup generating a CAB
-        /// </summary>
-        /// <returns></returns>
-        private static int BackupCompleteCAB(String BackupFileName)
-        {
-            int ProcessId;
-
-            try
-            {
-                log.Debug("Checking and correcting filename " + BackupFileName + " to use .CAB");
-                // Inspect the filename.  Correct the extension if necessary
-                BackupFileName = System.IO.Path.ChangeExtension(BackupFileName, ".CAB");
-
-                // Get the current PID
-                ProcessId = System.Diagnostics.Process.GetCurrentProcess().Id;
-                log.Debug("Got Process ID " + ProcessId.ToString());
-
-                if (ProcessId == 0)
-                {
-                    log.Error("Inavlid ProcessID");
-                    return -2;
-                }
-
-                log.Info("Starting CAB Backup to " + BackupFileName);
-
-                // Call complete backup routine
-                _Galaxy.Backup(ProcessId, BackupFileName, _GRNodeName, _GalaxyName);
-
-                log.Info("Backup CAB Complete");
-                
-                // Success
-                return 0;
-            }
-            catch (Exception ex)
-            {
-                throw ex;                
-            }
-
-        }
-
-        /// <summary>
-        /// Perform a complete backup generating an AAPKG
-        /// </summary>
-        /// <returns></returns>
-        private static int BackupCompleteAAPKG(String BackupFileName)
-        {
-            //IgObjects workingGObjectList;
-            cObjectList ObjectList = new cObjectList(_Galaxy, _GRNodeName);
-
-            try
-            {
-                log.Debug("Checking and correcting filename " + BackupFileName + " to use .AAPKG");
-                // Inspect the filename.  Correct the extension if necessary
-                BackupFileName = System.IO.Path.ChangeExtension(BackupFileName, ".AAPKG");
-
-                log.Info("Starting AAPKG Backup to " + BackupFileName);
-                
-                // Set the filter criteria
-                ObjectList.ChangeLogTimestampStartFilter = _ChangeLogTimestampStartFilter;
-                ObjectList.CustomSQLSelection = _CustomSQLSelection;
-
-                //Perform the export
-                ObjectList.GetCompleteObjectList(true).ExportObjects(EExportType.exportAsPDF, BackupFileName);
-                //workingGObjectList.ExportObjects(EExportType.exportAsPDF, BackupFileName);
-
-                if (_Galaxy.CommandResult.Successful != true)
-                {
-                    // Failed to retrieve any objects from the query
-                    log.Error("Error while executing BackupCompleteAAPKG");
-                }
-
-                log.Info("Backup AAPKG Complete");
-
-                return 0;
-            }
-            catch (Exception ex)
-            {
-                throw ex;                
-            }
-        }
-
-        /// <summary>
-        /// Perform a complete backup generating a CSV
-        /// </summary>
-        /// <returns></returns>
-        private static int BackupCompleteCSV(String BackupFileName)
-        {
-            //IgObjects workingGObjectList;
-            cObjectList ObjectList = new cObjectList(_Galaxy, _GRNodeName);
-
-            try
-            {
-                log.Debug("Checking and correcting filename " + BackupFileName + " to use .CSV");
-                
-                // Inspect the filename.  Correct the extension if necessary
-                BackupFileName = System.IO.Path.ChangeExtension(BackupFileName, ".CSV");
-
-                log.Info("Starting CSV Backup to " + BackupFileName);
-
-                // Set the filter criteria
-                ObjectList.ChangeLogTimestampStartFilter = _ChangeLogTimestampStartFilter;
-                ObjectList.CustomSQLSelection = _CustomSQLSelection;
-
-                ObjectList.GetCompleteObjectList(true).ExportObjects(EExportType.exportAsCSV, BackupFileName);
-
-                if (_Galaxy.CommandResult.Successful != true)
-                {
-                    // Failed to retrieve any objects from the query
-                    log.Error("Error while executing BackupCompleteCSV");
-                }
-
-                log.Info("Backup CSV Complete");
-
-                return 0;
-            }
-            catch (Exception ex)
-            {
-                throw ex;                
-            }
-        }
-        
-        /// <summary>
-        /// Backup GObjects to a Single File
-        /// </summary>
-        /// <param name="ExportType"></param>
-        /// <param name="GalaxyObjects"></param>
-        /// <param name="BackupFileName"></param>
-        /// <returns></returns>
-        private static int BackupToFile(EExportType ExportType, IgObjects GalaxyObjects ,String BackupFileName)
-        {
-            try
-            {
-                // Make sure we have the right extension on the backup file
-                BackupFileName = System.IO.Path.ChangeExtension(BackupFileName, CorrectExtension(ExportType));
-
-                log.Info("Backing up to " + BackupFileName);
-
-                // Filter the Objects list
-                //GalaxyObjects = FilterGalaxyObjects(GalaxyObjects);
-
-                // Perform the actual export
-                GalaxyObjects.ExportObjects(ExportType, BackupFileName);
-
-                if (GalaxyObjects.CommandResults.CompletelySuccessful != true)
-                {
-                    throw new Exception(GalaxyObjects.CommandResults.ToString());
-                }
-                else
-                {
-                    log.Info("Backup to " + BackupFileName + " succeeded.");
-                }
-
-                return 0;
-            }
-            catch(Exception ex)
-            {
-                log.Error(ex.ToString());
-                return -1;
-            }
-        }
-
-        /// <summary>
-        /// Backup a Single GObject to a File
-        /// </summary>
-        /// <param name="ExportType"></param>
-        /// <param name="GalaxyObject"></param>
-        /// <param name="BackupFileName"></param>
-        /// <returns></returns>
-        private static int BackupToFile(EExportType ExportType, IgObject GalaxyObject, String BackupFileName)
-        {
-            IgObjects GalaxyObjects;
-            String[] SingleItemName  = new String[1];
-
-            try
-            {
-                SingleItemName[0] = GalaxyObject.Tagname;
-
-                if(SingleItemName[0].Substring(0,1) == "$")
-                {
-                    //Template
-                    GalaxyObjects = _Galaxy.QueryObjectsByName(EgObjectIsTemplateOrInstance.gObjectIsTemplate, ref SingleItemName);
-                }
-                else
-                {
-                    // Instance
-                    GalaxyObjects = _Galaxy.QueryObjectsByName(EgObjectIsTemplateOrInstance.gObjectIsInstance, ref SingleItemName);
-                }
-
-                if (GalaxyObjects.count > 0)
-                {
-                    return BackupToFile(ExportType, GalaxyObjects, BackupFileName);
-                }
-
-                return 0;
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-        }
-
-        /// <summary>
-        /// Backup GObjects to multiple files in a single folder
-        /// </summary>
-        /// <param name="ExportType"></param>
-        /// <param name="GalaxyObjects"></param>
-        /// <param name="BackupFolderName"></param>
-        /// <returns></returns>
-        private static int BackupToFolder(EExportType ExportType, IgObjects GalaxyObjects, String BackupFolderName)
-        {
-            String[] SingleItemName = new String[1];
-            IgObjects SingleObject;
-            String BackupFileName;
-            String Extension;
-            String ConfigVersion;
-
-            try
-            {
-                // Get Extension
-                Extension = CorrectExtension(ExportType);
-
-                //Create the Backup FOlder if it doesn't exist
-                if (!System.IO.Directory.Exists(BackupFolderName))
-                {
-                    System.IO.Directory.CreateDirectory(BackupFolderName);
-                }
-
-                // Double check that we have the folder.  If it's missing then error out
-                if (!System.IO.Directory.Exists(BackupFolderName))
-                {
-                    throw new Exception("Missing Directory " + BackupFolderName);
-                }
-
-                // Filter the Objects list
-                //GalaxyObjects = FilterGalaxyObjects(GalaxyObjects);
-
-                //Need to iterate through the the objects
-                foreach(IgObject Item in GalaxyObjects)
-                {
-                    // Populate the single item array with the item's tagname
-                    SingleItemName[0] = Item.Tagname;
-
-                    //Default Config Version Text to Blank
-                    ConfigVersion = "";
-
-                    //If we require config version in the filename then figure it out then add it
-                    if (_IncludeConfigVersion == "true")
-                    {
-                        ConfigVersion = "-v" + Item.ConfigVersion.ToString();
-                    }
-
-                    // Calculate the appropriate backup filename
-                    BackupFileName = BackupFolderName + "\\" + Item.Tagname + ConfigVersion + Extension;
-
-                    // Figure out if we're dealing with a Template or Instance
-                    if(Item.Tagname.Substring(0,1) == "$")
-                    {
-                        //Template
-                        SingleObject = _Galaxy.QueryObjectsByName(EgObjectIsTemplateOrInstance.gObjectIsTemplate, ref SingleItemName);
-                    }
-                    else
-                    {
-                        // Instance
-                        SingleObject = _Galaxy.QueryObjectsByName(EgObjectIsTemplateOrInstance.gObjectIsInstance, ref SingleItemName);
-                    }
-
-                    // Make sure we have an actual object in the collection
-                    if (SingleObject.count > 0)
-                    {
-                        // Perform the actual backup
-                        BackupToFile(ExportType, SingleObject, BackupFileName);
-                    }
-                }
-
-                return 0;
-            }
-            catch (Exception ex)
-            {
-                log.Error(ex.ToString());
-                return -1;
-            }
-        }
-
-#endregion
-
-
-        #region Utilities
-
-        /// <summary>
-        /// Calculate extension based on Export Type
-        /// </summary>
-        /// <param name="ExportType"></param>
-        /// <returns></returns>
-        private static string CorrectExtension(EExportType ExportType)
-        {
-            // Set the correct extension based on type of export
-            if (ExportType == EExportType.exportAsPDF)
-            {
-                return ".AAPKG";
-            }
-
-            if (ExportType == EExportType.exportAsCSV)
-            {
-                return ".CSV";
-            }
-
-            return "";
-        }
-
-        #endregion
     }
 }

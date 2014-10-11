@@ -5,7 +5,7 @@ using System.Security;
 using System.Collections;
 using System.Text;
 
-namespace aaEncryption
+namespace Classes.Encryption
 {
     public class cSecurity
     {
