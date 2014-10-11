@@ -597,6 +597,39 @@ namespace Classes.ObjectList
         }
 
         /// <summary>
+        /// Return an String when given an EConditionType that maps to the condition type 
+        /// </summary>
+        /// <param name="ConditionType"></param>
+        /// <returns></returns>
+        public static string ConditionType(EConditionType ConditionType)
+        {
+            // Just do a big switch case on all the different kinds, return 
+            // the correct reference
+            switch (ConditionType)
+            {
+                case EConditionType.derivedOrInstantiatedFrom: return "derivedOrInstantiatedFrom";
+                case EConditionType.basedOn: return "basedOn";
+                case EConditionType.containedBy: return "containedBy";
+                case EConditionType.hostEngineIs: return "hostEngineIs";
+                case EConditionType.belongsToArea: return "belongsToArea";
+                case EConditionType.assignedTo: return "assignedTo";
+                case EConditionType.withinSecurityGroup: return "withinSecurityGroup";
+                case EConditionType.createdBy: return "createdBy";
+                case EConditionType.lastModifiedBy: return "lastModifiedBy";
+                case EConditionType.checkedOutBy: return "checkedOutBy";
+                case EConditionType.namedLike: return "namedLike";
+                case EConditionType.validationStatusIs: return "validationStatusIs";
+                case EConditionType.deploymentStatusIs:  return"deploymentStatusIs";
+                case EConditionType.checkoutStatusIs: return "checkoutStatusIs";
+                case EConditionType.objectCategoryIs: return "objectCategoryIs";
+                case EConditionType.hierarchicalNameLike: return "hierarchicalNameLike";
+                case EConditionType.NameEquals: return "NameEquals";
+                case EConditionType.NameSpaceIdIs: return "NameSpaceldls";
+                default: return "";
+            }
+        }
+
+        /// <summary>
         /// Filter the Galaxy object list based on custom filter information passed
         /// </summary>
         /// <returns></returns>

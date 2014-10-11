@@ -426,7 +426,6 @@ namespace Classes.Backup
                         return BackupToFolder(EExportType.exportAsCSV, objectList.GetObjectsFromStringList(this.DelimitedObjectList, true), this.BackupFolderName);
 
 
-
                     //Export Objects Based on Filter Criteria to single AAPKG
                     case "FilteredObjectsAAPKG":
                         return BackupToFile(EExportType.exportAsPDF, objectList.GetObjectsFromSingleFilter(this.FilterType, this.Filter, cObjectList.ETemplateOrInstance.Both, true), this.BackupFileName);
