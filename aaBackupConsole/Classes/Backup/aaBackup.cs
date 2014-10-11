@@ -16,19 +16,20 @@ namespace Classes.Backup
         #region Declarations
 
         private IGalaxy _galaxy;
-        private string _galaxyName;        
-        private string _grNodeName;
-        private string _username;
-        private string _password;
-        private string _backupFileName;
-        private string _backupFolderName;
-        private string _delimitedObjectList;
-        private string _backupType;
-        private bool _includeConfigVersion;
-        private string _filterType;
-        private string _filter;
-        private DateTime _changeLogTimestampStartFilter;
-        private string _customSQLSelection;
+        private string _galaxyName = "";        
+        private string _grNodeName = "";
+        private string _username = "";
+        private string _password = "";
+        private string _backupFileName = "";
+        private string _backupFolderName = "";
+        private string _delimitedObjectList = "";
+        private string _backupType = "";
+        private bool _includeConfigVersion = false;
+        private string _filterType = "";
+        private string _filter = "";
+        private DateTime _changeLogTimestampStartFilter = DateTime.Parse("1/1/1970");
+        private string _customSQLSelection = "";
+        private bool _overwriteFiles = true;
 
         // First things first, setup logging 
         private readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
@@ -36,6 +37,13 @@ namespace Classes.Backup
         #endregion
 
         #region Constructors
+
+        public aaBackup(){}
+
+        public aaBackup(IGalaxy Galaxy)
+        {
+            this.Galaxy = Galaxy;
+        }
 
         #endregion
 
@@ -52,7 +60,10 @@ namespace Classes.Backup
 
             set
             {
-                _galaxy = value;
+                if (value != null)
+                {
+                    _galaxy = value;
+                }
             }
         }
 
@@ -174,6 +185,8 @@ namespace Classes.Backup
 
         }
 
+
+        //TODO : Use enumerations for FilterType
         public string FilterType
         {
             get
@@ -204,7 +217,7 @@ namespace Classes.Backup
         public DateTime ChangeLogTimestampStartFilter
         {
             get
-            {
+            {              
                 return _changeLogTimestampStartFilter;
             }
 
@@ -226,6 +239,20 @@ namespace Classes.Backup
                 _customSQLSelection = value;
             }
         }
+
+        public bool OverwriteFiles
+        {
+            get
+            {
+                return _overwriteFiles;
+            }
+
+            set
+            {
+                _overwriteFiles = value;
+            }
+        }
+
 
         #endregion
 
@@ -296,7 +323,6 @@ namespace Classes.Backup
                 objectList.ChangeLogTimestampStartFilter = this.ChangeLogTimestampStartFilter;
                 objectList.CustomSQLSelection = this.CustomSQLSelection;
                 
-
                 // Determine which type of backup and call the appropriate routine
                 switch (this.BackupType)
                 {
@@ -312,21 +338,6 @@ namespace Classes.Backup
                     case "CompleteCSV":
                         return BackupCompleteCSV(this.BackupFileName);
 
-                    //Call the objects AAPKG Backup routine
-                    case "ObjectsSingleAAPKG":
-                        return BackupToFile(EExportType.exportAsPDF, objectList.GetObjectsFromStringList(this.DelimitedObjectList, true), this.BackupFileName);
-
-                    //Call the objects CSV Backup routine
-                    case "ObjectsSingleCSV":
-                        return BackupToFile(EExportType.exportAsCSV, objectList.GetObjectsFromStringList(this.DelimitedObjectList, true), this.BackupFileName);
-
-                    //Exporting all Separate objects into AAPKG's
-                    case "ObjectsSeparateAAPKG":
-                        return BackupToFolder(EExportType.exportAsPDF, objectList.GetObjectsFromStringList(this.DelimitedObjectList, true), this.BackupFolderName);
-
-                    //Exporting all Separate objects into CSV's
-                    case "ObjectsSeparateCSV":
-                        return BackupToFolder(EExportType.exportAsCSV, objectList.GetObjectsFromStringList(this.DelimitedObjectList, true), this.BackupFolderName);
 
                     //Export All Templates to an Single AAPKG
                     case "AllTemplatesAAPKG":
@@ -352,6 +363,26 @@ namespace Classes.Backup
                     case "AllInstancesSeparateCSV":
                         return BackupToFolder(EExportType.exportAsCSV, objectList.GetAllInstances(), this.BackupFolderName);
 
+
+
+                    //Call the objects AAPKG Backup routine
+                    case "ObjectsSingleAAPKG":
+                        return BackupToFile(EExportType.exportAsPDF, objectList.GetObjectsFromStringList(this.DelimitedObjectList, true), this.BackupFileName);
+
+                    //Call the objects CSV Backup routine
+                    case "ObjectsSingleCSV":
+                        return BackupToFile(EExportType.exportAsCSV, objectList.GetObjectsFromStringList(this.DelimitedObjectList, true), this.BackupFileName);
+
+                    //Exporting all Separate objects into AAPKG's
+                    case "ObjectsSeparateAAPKG":
+                        return BackupToFolder(EExportType.exportAsPDF, objectList.GetObjectsFromStringList(this.DelimitedObjectList, true), this.BackupFolderName);
+
+                    //Exporting all Separate objects into CSV's
+                    case "ObjectsSeparateCSV":
+                        return BackupToFolder(EExportType.exportAsCSV, objectList.GetObjectsFromStringList(this.DelimitedObjectList, true), this.BackupFolderName);
+
+
+
                     //Export Objects Based on Filter Criteria to single AAPKG
                     case "FilteredObjectsAAPKG":
                         return BackupToFile(EExportType.exportAsPDF, objectList.GetObjectsFromSingleFilter(this.FilterType, this.Filter, cObjectList.ETemplateOrInstance.Both, true), this.BackupFileName);
@@ -369,10 +400,8 @@ namespace Classes.Backup
                         return BackupToFolder(EExportType.exportAsCSV, objectList.GetObjectsFromSingleFilter(this.FilterType, this.Filter, cObjectList.ETemplateOrInstance.Both, true), this.BackupFolderName);
 
                     default:
-                        break;
-                }
-
-                return 0;
+                        throw new Exception("Invalid Backup Type " + this.BackupType);
+                }             
             }
             catch (Exception ex)
             {
@@ -394,6 +423,9 @@ namespace Classes.Backup
                 log.Debug("Checking and correcting filename " + BackupFileName + " to use .CAB");
                 // Inspect the filename.  Correct the extension if necessary
                 BackupFileName = System.IO.Path.ChangeExtension(BackupFileName, ".CAB");
+
+                // Check for file exists.  Bail if the file already exists and we don't want to overwrite
+                if (CheckandLogFileExists(BackupFileName)){return 0;}
 
                 // Get the current PID
                 ProcessId = System.Diagnostics.Process.GetCurrentProcess().Id;
@@ -437,6 +469,9 @@ namespace Classes.Backup
                 // Inspect the filename.  Correct the extension if necessary
                 BackupFileName = System.IO.Path.ChangeExtension(BackupFileName, ".AAPKG");
 
+                // Check for file exists.  Bail if the file already exists and we don't want to overwrite
+                if (CheckandLogFileExists(BackupFileName)) { return 0; }
+
                 log.Info("Starting AAPKG Backup to " + BackupFileName);
 
                 // Set the filter criteria
@@ -478,6 +513,9 @@ namespace Classes.Backup
                 // Inspect the filename.  Correct the extension if necessary
                 BackupFileName = System.IO.Path.ChangeExtension(BackupFileName, ".CSV");
 
+                // Check for file exists.  Bail if the file already exists and we don't want to overwrite
+                if (CheckandLogFileExists(BackupFileName)) { return 0; }
+
                 log.Info("Starting CSV Backup to " + BackupFileName);
 
                 // Set the filter criteria
@@ -515,6 +553,9 @@ namespace Classes.Backup
             {
                 // Make sure we have the right extension on the backup file
                 BackupFileName = System.IO.Path.ChangeExtension(BackupFileName, CorrectExtension(ExportType));
+
+                // Check for file exists.  Bail if the file already exists and we don't want to overwrite
+                if (CheckandLogFileExists(BackupFileName)) { return 0; }
 
                 log.Info("Backing up to " + BackupFileName);
 
@@ -629,6 +670,10 @@ namespace Classes.Backup
                     // Calculate the appropriate backup filename
                     BackupFileName = BackupFolderName + "\\" + Item.Tagname + ConfigVersion + Extension;
 
+                    // Check for file exists.  Bail if the file already exists and we don't want to overwrite
+                    // In this section it is actually a bit redundant but we don't want to perform the Galaxy query if not necessary
+                    if (CheckandLogFileExists(BackupFileName)) { continue; }
+
                     // Figure out if we're dealing with a Template or Instance
                     if (Item.Tagname.Substring(0, 1) == "$")
                     {
@@ -681,6 +726,22 @@ namespace Classes.Backup
             }
 
             return "";
+        }
+
+        /// <summary>
+        /// Check to see if a file exists.  If it does then log message and return true
+        /// </summary>
+        /// <param name="Filename"></param>
+        /// <returns></returns>
+        private bool CheckandLogFileExists(string Filename)
+        {
+            // Check for file exists.  Bail if the file already exists and we don't want to overwrite
+            if (System.IO.File.Exists(Filename) & !this.OverwriteFiles)
+            {
+                log.Info(Filename + " already exists.  Backup will not be performed");
+                return true;
+            }
+            return false;
         }
 
         #endregion

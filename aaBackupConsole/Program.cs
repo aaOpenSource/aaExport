@@ -54,6 +54,7 @@ namespace aaBackupConsole
         static string _EncryptedPassword;
         static string _ChangeLogTimestampStartFilter;
         static string _CustomSQLSelection;
+        static string _OverwriteFiles;
         
         static CommandLine.Utility.Arguments _args;
         
@@ -114,11 +115,12 @@ namespace aaBackupConsole
                     BackupFolderName = _BackupFolderName,
                     DelimitedObjectList = _ObjectList,
                     BackupType = _BackupType,
-                    IncludeConfigVersion = (_IncludeConfigVersion == "true") || (_IncludeConfigVersion == "1"),
+                    IncludeConfigVersion = (_IncludeConfigVersion.ToLower() == "true") || (_IncludeConfigVersion == "1"),
                     FilterType = _FilterType,
                     Filter = _Filter,
                     ChangeLogTimestampStartFilter = DateTime.Parse(_ChangeLogTimestampStartFilter),
-                    CustomSQLSelection = _CustomSQLSelection                    
+                    CustomSQLSelection = _CustomSQLSelection,
+                    OverwriteFiles = (_OverwriteFiles.ToLower() == "true") || (_OverwriteFiles == "1")
                 };
 
                 // Execute the backup
@@ -197,6 +199,7 @@ namespace aaBackupConsole
                 CheckAndSetParameters(ref _EncryptedPassword, "EncryptedPassword", CommandLine, true);
                 CheckAndSetParameters(ref _ChangeLogTimestampStartFilter, "ChangeLogTimestampStartFilter", CommandLine, true, "1/1/1970");
                 CheckAndSetParameters(ref _CustomSQLSelection, "CustomSQLSelection", CommandLine, true,"");
+                CheckAndSetParameters(ref _OverwriteFiles, "OverwriteFiles", CommandLine, true, "true");
 
                 // Success
                 return 0;
