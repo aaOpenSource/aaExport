@@ -214,23 +214,31 @@ namespace Classes.ObjectList
         /// </summary>
         /// <param name="ObjectList"></param>
         /// <param name="ApplyFilters"></param>
+        /// <param name="Delimiter"></param>
         /// <returns></returns>
-        public IgObjects GetObjectsFromStringList(String ObjectList, bool ApplyFilters = false)
+        public IgObjects GetObjectsFromStringList(String ObjectList, bool ApplyFilters = false,char Delimiter = ',')
         {
-            string[] ObjectArray;
+            return this.GetObjectsFromStringArray(ObjectList.Split(Delimiter));
+        }
+
+        /// <summary>
+        /// Get list of objects using a string array
+        /// </summary>
+        /// <param name="ObjectList"></param>
+        /// <param name="ApplyFilters"></param>
+        /// <returns></returns>
+        public IgObjects GetObjectsFromStringArray(String[] ObjectArray, bool ApplyFilters = false)
+        {
             IgObjects returnGalaxyObjects;
 
             try
             {
                 // If the returned length is ok then stuff the objects into an array
-                if (ObjectList.Length <= 0)
+                if (ObjectArray.Length <= 0)
                 {
                     // Object List not Long Enough
                     throw new Exception("Object list length = 0");
                 }
-
-                // Take the comma Separated values and split them into an array
-                ObjectArray = ObjectList.Split(',');
 
                 log.Debug("QueryObjectsByName for Templates");
                 // Now get the template Objects into a GObjects set
@@ -256,7 +264,7 @@ namespace Classes.ObjectList
                 // Apply the filters if the switch it turned on
                 if (ApplyFilters)
                 {
-                    returnGalaxyObjects = ApplyCustomFilters(returnGalaxyObjects);
+                    returnGalaxyObjects = this.ApplyCustomFilters(returnGalaxyObjects);
                 }
 
                 // REturn the Results
@@ -314,6 +322,43 @@ namespace Classes.ObjectList
 
                 // REturn the Results
                 return returnGalaxyObjects;
+
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+
+        }
+
+        /// <summary>
+        /// Get list of objects from a text file on disk
+        /// </summary>
+        /// <param name="FilePath"></param>
+        /// <param name="ApplyFilters"></param>
+        /// <returns></returns>
+        public IgObjects GetObjectsFromFile(String FilePath, bool ApplyFilters = false)
+        {
+            string[] ObjectArray;
+            try
+            {
+                //Test to see if the file exists
+                if (!System.IO.File.Exists(FilePath))
+                {
+                    throw new Exception(FilePath + " does not exist.");
+                }
+
+                // Read the file into an array.  One line per object
+                ObjectArray = System.IO.File.ReadAllLines(FilePath);
+
+                // If the first line is a CSV then run a split and recreate the array using all the items in the single line
+                if(ObjectArray[0].Contains(','))
+                {
+                    ObjectArray = ObjectArray[0].Split(',');
+                }
+                
+                // Call Internal Function
+                return this.GetObjectsFromStringArray(ObjectArray,ApplyFilters);               
 
             }
             catch (Exception ex)

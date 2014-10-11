@@ -30,6 +30,7 @@ namespace Classes.Backup
         private DateTime _changeLogTimestampStartFilter = DateTime.Parse("1/1/1970");
         private string _customSQLSelection = "";
         private bool _overwriteFiles = true;
+        private string _objectListFile = "";
 
         // First things first, setup logging 
         private readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
@@ -253,6 +254,18 @@ namespace Classes.Backup
             }
         }
 
+        public string ObjectListFile
+        {
+            get
+            {
+                return _objectListFile;
+            }
+
+            set
+            {
+                _objectListFile = value;
+            }
+        }
 
         #endregion
 
@@ -323,6 +336,36 @@ namespace Classes.Backup
                 objectList.ChangeLogTimestampStartFilter = this.ChangeLogTimestampStartFilter;
                 objectList.CustomSQLSelection = this.CustomSQLSelection;
                 
+                //Check the ObjectListFile.  If it has been defined then use that as a source of objects
+                if (this.ObjectListFile != "")
+                {
+                    string[] ObjectArray;
+
+                    log.Info("Parsing file " + ObjectListFile + " for the object list");
+
+                    //Test to see if the file exists
+                    if (!System.IO.File.Exists(this.ObjectListFile))
+                    {
+                        throw new Exception(this.ObjectListFile + " does not exist.");
+                    }
+
+                    // Read the file into an array.  One line per object
+                    ObjectArray = System.IO.File.ReadAllLines(this.ObjectListFile);
+
+                    // If the first line is a CSV then run a split and recreate the array using all the items in the single line
+                    if (ObjectArray[0].Contains(','))
+                    {
+                        ObjectArray = ObjectArray[0].Split(',');
+                    }
+
+                    // Now recast back to a single CSV for consumption later.  This will overwrite anything the user has specified on the command line
+                    // for an object list
+                    this.DelimitedObjectList = string.Join(",", ObjectArray);
+
+                    log.Debug("Parsed the following object list from file " + ObjectListFile + " : " + this.DelimitedObjectList);
+                }
+
+                
                 // Determine which type of backup and call the appropriate routine
                 switch (this.BackupType)
                 {
@@ -337,6 +380,7 @@ namespace Classes.Backup
                     // Call the complete CSV backup routine
                     case "CompleteCSV":
                         return BackupCompleteCSV(this.BackupFileName);
+
 
 
                     //Export All Templates to an Single AAPKG
@@ -398,6 +442,7 @@ namespace Classes.Backup
                     //Export Objects Based on Filter Criteria to Separate CSV
                     case "FilteredObjectsSeparateCSV":
                         return BackupToFolder(EExportType.exportAsCSV, objectList.GetObjectsFromSingleFilter(this.FilterType, this.Filter, cObjectList.ETemplateOrInstance.Both, true), this.BackupFolderName);
+
 
                     default:
                         throw new Exception("Invalid Backup Type " + this.BackupType);

@@ -55,6 +55,7 @@ namespace aaBackupConsole
         static string _ChangeLogTimestampStartFilter;
         static string _CustomSQLSelection;
         static string _OverwriteFiles;
+        static string _ObjectListFile;
         
         static CommandLine.Utility.Arguments _args;
         
@@ -120,7 +121,8 @@ namespace aaBackupConsole
                     Filter = _Filter,
                     ChangeLogTimestampStartFilter = DateTime.Parse(_ChangeLogTimestampStartFilter),
                     CustomSQLSelection = _CustomSQLSelection,
-                    OverwriteFiles = (_OverwriteFiles.ToLower() == "true") || (_OverwriteFiles == "1")
+                    OverwriteFiles = (_OverwriteFiles.ToLower() == "true") || (_OverwriteFiles == "1"),
+                    ObjectListFile = _ObjectListFile
                 };
 
                 // Execute the backup
@@ -200,6 +202,7 @@ namespace aaBackupConsole
                 CheckAndSetParameters(ref _ChangeLogTimestampStartFilter, "ChangeLogTimestampStartFilter", CommandLine, true, "1/1/1970");
                 CheckAndSetParameters(ref _CustomSQLSelection, "CustomSQLSelection", CommandLine, true,"");
                 CheckAndSetParameters(ref _OverwriteFiles, "OverwriteFiles", CommandLine, true, "true");
+                CheckAndSetParameters(ref _ObjectListFile, "ObjectListFile", CommandLine, true, "");
 
                 // Success
                 return 0;
