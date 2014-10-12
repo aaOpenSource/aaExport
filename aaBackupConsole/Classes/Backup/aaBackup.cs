@@ -789,5 +789,28 @@ namespace Classes.Backup
         }
 
         #endregion
+
+        #region Enums
+
+        public enum ObjectSelection
+        {
+            CompleteGalaxy = 1,
+            AllTemplates = 2,
+            AllInstances = 3,
+            ObjectList = 4,
+            FilteredObjects = 5
+        }
+
+        public enum BackupResult
+        {
+            CAB = 1,
+            SingleAAPKG = 2,
+            SingleCSV = 3,
+            SeparateAAPKG = 4,
+            SeparateCSV = 5
+        }
+
+        #endregion
+
     }
 }
