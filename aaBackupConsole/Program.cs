@@ -13,7 +13,7 @@ using log4net;
 
 using Classes.ObjectList;
 using Classes.Encryption;
-using Classes.Backup;
+using Classes.Export;
 using Classes.GalaxyHelper;
 
 
@@ -133,7 +133,7 @@ namespace aaBackupConsole
 
             
             // Instantiate the Object
-            aaBackup BackupObj = new aaBackup();
+            caaExport BackupObj = new caaExport();
 
             int i = 0;
 
@@ -158,72 +158,72 @@ namespace aaBackupConsole
             // Connect
             BackupObj.Connect();
 
-            BackupObj.ObjectSelection = aaBackup.EObjectSelection.CompleteGalaxy;
+            BackupObj.ObjectSelection = caaExport.EObjectSelection.CompleteGalaxy;
             BackupObj.BackupFileName = "c:\\backups\\" + i++.ToString("D4") + "-" + System.Guid.NewGuid().ToString();
-            BackupObj.BackupResult = aaBackup.EBackupResult.CAB;
+            BackupObj.BackupResult = caaExport.EBackupResult.CAB;
             BackupObj.CreateBackup();
 
             BackupObj.BackupFileName = "c:\\backups\\" + i++.ToString("D4") + "-" + System.Guid.NewGuid().ToString();
-            BackupObj.BackupResult = aaBackup.EBackupResult.SingleAAPKG;
+            BackupObj.BackupResult = caaExport.EBackupResult.SingleAAPKG;
             BackupObj.CreateBackup();
 
             BackupObj.BackupFileName = "c:\\backups\\" + i++.ToString("D4") + "-" + System.Guid.NewGuid().ToString();
-            BackupObj.BackupResult = aaBackup.EBackupResult.SingleCSV;
+            BackupObj.BackupResult = caaExport.EBackupResult.SingleCSV;
             BackupObj.CreateBackup();
 
-            BackupObj.ObjectSelection = aaBackup.EObjectSelection.AllInstances;
+            BackupObj.ObjectSelection = caaExport.EObjectSelection.AllInstances;
 
-            BackupObj.BackupResult = aaBackup.EBackupResult.SingleCSV;
+            BackupObj.BackupResult = caaExport.EBackupResult.SingleCSV;
             BackupObj.BackupFileName = "c:\\backups\\" + i++.ToString("D4") + "-" + System.Guid.NewGuid().ToString();
             BackupObj.CreateBackup();
 
-            BackupObj.BackupResult = aaBackup.EBackupResult.SingleAAPKG;
+            BackupObj.BackupResult = caaExport.EBackupResult.SingleAAPKG;
             BackupObj.BackupFileName = "c:\\backups\\" + i++.ToString("D4") + "-" + System.Guid.NewGuid().ToString();
             BackupObj.CreateBackup();
 
-            BackupObj.BackupResult = aaBackup.EBackupResult.SeparateAAPKG;
+            BackupObj.BackupResult = caaExport.EBackupResult.SeparateAAPKG;
             BackupObj.BackupFolderName = "c:\\backups\\" + i++.ToString("D4") + "-" + System.Guid.NewGuid().ToString();
             BackupObj.CreateBackup();
 
-            BackupObj.BackupResult = aaBackup.EBackupResult.SeparateCSV;
+            BackupObj.BackupResult = caaExport.EBackupResult.SeparateCSV;
             BackupObj.BackupFolderName = "c:\\backups\\" + i++.ToString("D4") + "-" + System.Guid.NewGuid().ToString();
             BackupObj.CreateBackup();
 
 
-            BackupObj.ObjectSelection = aaBackup.EObjectSelection.AllTemplates;
+            BackupObj.ObjectSelection = caaExport.EObjectSelection.AllTemplates;
 
-            BackupObj.BackupResult = aaBackup.EBackupResult.SingleCSV;
+            BackupObj.BackupResult = caaExport.EBackupResult.SingleCSV;
             BackupObj.BackupFileName = "c:\\backups\\" + i++.ToString("D4") + "-" + System.Guid.NewGuid().ToString();
             BackupObj.CreateBackup();
 
-            BackupObj.BackupResult = aaBackup.EBackupResult.SingleAAPKG;
+            BackupObj.BackupResult = caaExport.EBackupResult.SingleAAPKG;
             BackupObj.BackupFileName = "c:\\backups\\" + i++.ToString("D4") + "-" + System.Guid.NewGuid().ToString();
             BackupObj.CreateBackup();
 
-            BackupObj.BackupResult = aaBackup.EBackupResult.SeparateAAPKG;
+            BackupObj.BackupResult = caaExport.EBackupResult.SeparateAAPKG;
             BackupObj.BackupFolderName = "c:\\backups\\" + i++.ToString("D4") + "-" + System.Guid.NewGuid().ToString();
             BackupObj.CreateBackup();
 
-            BackupObj.BackupResult = aaBackup.EBackupResult.SeparateCSV;
+            BackupObj.BackupResult = caaExport.EBackupResult.SeparateCSV;
             BackupObj.BackupFolderName = "c:\\backups\\" + i++.ToString("D4") + "-" + System.Guid.NewGuid().ToString();
             BackupObj.CreateBackup();
                         
             
-            BackupObj.ObjectSelection = aaBackup.EObjectSelection.ObjectList;
+            BackupObj.ObjectSelection = caaExport.EObjectSelection.ObjectList;
             
-            BackupObj.BackupResult = aaBackup.EBackupResult.SingleCSV;
+            BackupObj.BackupResult = caaExport.EBackupResult.SingleCSV;
             BackupObj.BackupFileName = "c:\\backups\\" + i++.ToString("D4") + "-" + System.Guid.NewGuid().ToString();
             BackupObj.CreateBackup();
 
-            BackupObj.BackupResult = aaBackup.EBackupResult.SingleAAPKG;
+            BackupObj.BackupResult = caaExport.EBackupResult.SingleAAPKG;
             BackupObj.BackupFileName = "c:\\backups\\" + i++.ToString("D4") + "-" + System.Guid.NewGuid().ToString();
             BackupObj.CreateBackup();
 
-            BackupObj.BackupResult = aaBackup.EBackupResult.SeparateAAPKG;
+            BackupObj.BackupResult = caaExport.EBackupResult.SeparateAAPKG;
             BackupObj.BackupFolderName = "c:\\backups\\" + i++.ToString("D4") + "-" + System.Guid.NewGuid().ToString();
             BackupObj.CreateBackup();
 
-            BackupObj.BackupResult = aaBackup.EBackupResult.SeparateCSV;
+            BackupObj.BackupResult = caaExport.EBackupResult.SeparateCSV;
             BackupObj.BackupFolderName = "c:\\backups\\" + i++.ToString("D4") + "-" + System.Guid.NewGuid().ToString();
             BackupObj.CreateBackup();
                 }
