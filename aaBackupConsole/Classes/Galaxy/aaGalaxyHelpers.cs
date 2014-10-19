@@ -6,19 +6,54 @@ using System.Text;
 using ArchestrA.GRAccess;
 using log4net;
 
-namespace Classes.GalaxyHelpers
+namespace Classes.GalaxyHelper
 {
-    class aaGalaxyHelpers
+    class aaGalaxyHelper
     {
 
         // First things first, setup logging 
        private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-        
+       
+        private IGalaxy _galaxy;
+
+        #region properties
+
+        public IGalaxy Galaxy
+        {
+            get
+            {
+                return this._galaxy;
+            }
+
+            set
+            {
+                this._galaxy = value;
+            }
+
+
+        }
+
+        public bool Connected
+        {
+            get
+            {
+                if (this._galaxy == null)
+                {
+                    return false;
+                }
+
+                return (this._galaxy.CdiVersionString != null);
+            }
+
+        }
+
+        #endregion
+
         /// <summary>
         /// Attempt to make a connection to the Galaxy
         /// </summary>
         /// <returns></returns>
-        public static IGalaxy ConnectToGalaxy(string GRNodeName, string GalaxyName, string UserName, string Password)
+        public bool Connect(string GRNodeName, string GalaxyName, string UserName, string Password)
         {
 
             GRAccessApp grAccess;
@@ -64,8 +99,11 @@ namespace Classes.GalaxyHelpers
                 // If we made it to hear we're good!
                 log.Info("Login Succeeded");
 
-                // Return control
-                return galaxy;
+                // Set the local reference
+                this.Galaxy = galaxy;
+
+                // return the connected status
+                return this.Connected;
 
             }
             catch (Exception ex)
