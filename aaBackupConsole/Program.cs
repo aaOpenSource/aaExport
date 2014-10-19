@@ -14,6 +14,7 @@ using log4net;
 using Classes.ObjectList;
 using Classes.Encryption;
 using Classes.Backup;
+using Classes.GalaxyHelper;
 
 
 namespace aaBackupConsole
@@ -30,32 +31,34 @@ namespace aaBackupConsole
         /// GR Access Class
         /// Used for accessing GR functionality
         /// </summary>
-        static GRAccessApp _GRAccess;
-        static IGalaxy _Galaxy;
-        static IGalaxies _Galaxies;
-
+        //static GRAccessApp _GRAccess;
+        //static IGalaxy _Galaxy;
+        
         // Parameters passed by command line argument or file
 
         /// <summary>
         /// GR Hostname
         /// </summary>
-        static string _GRNodeName;
-        static string _GalaxyName;
-        static string _Username;
-        static string _Password;
-        static string _BackupFileName;
-        static string _BackupFolderName;
-        static string _ObjectList;
-        static string _BackupType;       
-        static string _IncludeConfigVersion;
-        static string _FilterType;
-        static string _Filter;
-        static string _PasswordToEncrypt;
-        static string _EncryptedPassword;
-        static string _ChangeLogTimestampStartFilter;
-        static string _CustomSQLSelection;
-        static string _OverwriteFiles;
-        static string _ObjectListFile;
+        //static string _GRNodeName;
+        //static string _GalaxyName;
+        //static string _Username;
+        //static string _Password;
+        //static string _BackupFileName;
+        //static string _BackupFolderName;
+        //static string _ObjectList;
+        //static string _BackupType;       
+        //static string _IncludeConfigVersion;
+        //static string _FilterType;
+        //static string _Filter;
+        //static string _PasswordToEncrypt;
+        //static string _EncryptedPassword;
+        //static string _ChangeLogTimestampStartFilter;
+        //static string _CustomSQLSelection;
+        //static string _OverwriteFiles;
+        //static string _ObjectListFile;
+        //static string _ObjectSelection;
+        //static string _BackupResult;
+
         
         static CommandLine.Utility.Arguments _args;
         
@@ -73,60 +76,42 @@ namespace aaBackupConsole
 
                 log.Info("Starting aaBackup");
 
+
+                // Run the tests
+                RunTest();
+
+                return;
+
+
                 // First store off the arguments
                 _args = new CommandLine.Utility.Arguments(args);
 
                 // Parse the input parameters
-                ParseArguments(args);
+                //ParseArguments(args);
 
                 // First call the setup routine
                 Setup();
 
                 // If the user has passed us a password to encrypt then do that and  bail out.
-                if (_PasswordToEncrypt.Length > 0)
-                {
-                    log.Info("Encrypting password");
-                    WriteEncryptedPassword(_PasswordToEncrypt);
-                    log.Info("Password encryption complete");
-                    return;
-                }
+                //if (_PasswordToEncrypt.Length > 0)
+                //{
+                //    log.Info("Encrypting password");
+                //    WriteEncryptedPassword(_PasswordToEncrypt);
+                //    log.Info("Password encryption complete");
+                //    return;
+                //}
 
-                // If the user has passed an encrypted password then decrypt it 
-                // and set it to the current working password
-                if (_EncryptedPassword.Length > 0)
-                {
-                    log.Info("Decrypting password");
+                //// If the user has passed an encrypted password then decrypt it 
+                //// and set it to the current working password
+                //if (_EncryptedPassword.Length > 0)
+                //{
+                //    log.Info("Decrypting password");
                     
-                    // Set the password to the the decrypted password
-                    _Password = DecryptPassword(_EncryptedPassword);
-                }
+                //    // Set the password to the the decrypted password
+                //    _Password = DecryptPassword(_EncryptedPassword);
+                //}
 
-                // Attempt to Connect
-                //Connect();
 
-                // Instantiate the Object and set the parameters
-                var BackupObj = new aaBackup()
-                {
-                    Galaxy = _Galaxy,
-                    GRNodeName = _GRNodeName,
-                    GalaxyName = _GalaxyName,
-                    Username = _Username,
-                    Password = _Password,
-                    BackupFileName = _BackupFileName,
-                    BackupFolderName = _BackupFolderName,
-                    DelimitedObjectList = _ObjectList,
-                    BackupType = _BackupType,
-                    IncludeConfigVersion = (_IncludeConfigVersion.ToLower() == "true") || (_IncludeConfigVersion == "1"),
-                    FilterType = _FilterType,
-                    Filter = _Filter,
-                    ChangeLogTimestampStartFilter = DateTime.Parse(_ChangeLogTimestampStartFilter),
-                    CustomSQLSelection = _CustomSQLSelection,
-                    OverwriteFiles = (_OverwriteFiles.ToLower() == "true") || (_OverwriteFiles == "1"),
-                    ObjectListFile = _ObjectListFile
-                };
-
-                // Execute the backup
-                BackupObj.CreateBackup();
 
             }
             catch (Exception ex)
@@ -134,30 +119,126 @@ namespace aaBackupConsole
                 log.Error(ex);
             }
             finally
-            {
-                // Dispose of the Galaxy and GR Access Objects
-                if(_Galaxy != null)
-                {
-                    _Galaxy = null;
-                }
-
-
-                if (_GRAccess != null)
-                {
-                    _GRAccess = null;
-                }
-                
+            {                
                 Console.WriteLine("Enter to Continue to Finish");
                 Console.ReadLine();
             }
+        }
+
+        private static void RunTest()
+        {
+
+            try
+            {
+
+            
+            // Instantiate the Object
+            aaBackup BackupObj = new aaBackup();
+
+            int i = 0;
+
+            // Set the parms
+            BackupObj.GRNodeName = "localhost";
+            BackupObj.GalaxyName = "PICS";
+            BackupObj.Username = "";
+            BackupObj.Password = "";
+
+            BackupObj.BackupFolderName = "c:\\backups"; // _BackupFolderName;
+
+            BackupObj.DelimitedObjectList = "UserDefined_003, UserDefined_004, $PICSPlatform, $AlarmOnLow, $FloatValue";
+            
+            BackupObj.IncludeConfigVersion = true; //(_IncludeConfigVersion.ToLower() == "true") || (_IncludeConfigVersion == "1");
+            BackupObj.FilterType = ""; //_FilterType;
+            BackupObj.Filter = ""; // _Filter;
+            BackupObj.ChangeLogTimestampStartFilter = DateTime.Parse("1/1/1970"); // DateTime.Parse(_ChangeLogTimestampStartFilter);
+            BackupObj.CustomSQLSelection = ""; //_CustomSQLSelection;
+            BackupObj.OverwriteFiles = true; // (_OverwriteFiles.ToLower() == "true") || (_OverwriteFiles == "1");
+            BackupObj.ObjectListFile = "C:\\backups\\f\\objects.txt";
+
+            // Connect
+            BackupObj.Connect();
+
+            BackupObj.ObjectSelection = aaBackup.EObjectSelection.CompleteGalaxy;
+            BackupObj.BackupFileName = "c:\\backups\\" + i++.ToString("D4") + "-" + System.Guid.NewGuid().ToString();
+            BackupObj.BackupResult = aaBackup.EBackupResult.CAB;
+            BackupObj.CreateBackup();
+
+            BackupObj.BackupFileName = "c:\\backups\\" + i++.ToString("D4") + "-" + System.Guid.NewGuid().ToString();
+            BackupObj.BackupResult = aaBackup.EBackupResult.SingleAAPKG;
+            BackupObj.CreateBackup();
+
+            BackupObj.BackupFileName = "c:\\backups\\" + i++.ToString("D4") + "-" + System.Guid.NewGuid().ToString();
+            BackupObj.BackupResult = aaBackup.EBackupResult.SingleCSV;
+            BackupObj.CreateBackup();
+
+            BackupObj.ObjectSelection = aaBackup.EObjectSelection.AllInstances;
+
+            BackupObj.BackupResult = aaBackup.EBackupResult.SingleCSV;
+            BackupObj.BackupFileName = "c:\\backups\\" + i++.ToString("D4") + "-" + System.Guid.NewGuid().ToString();
+            BackupObj.CreateBackup();
+
+            BackupObj.BackupResult = aaBackup.EBackupResult.SingleAAPKG;
+            BackupObj.BackupFileName = "c:\\backups\\" + i++.ToString("D4") + "-" + System.Guid.NewGuid().ToString();
+            BackupObj.CreateBackup();
+
+            BackupObj.BackupResult = aaBackup.EBackupResult.SeparateAAPKG;
+            BackupObj.BackupFolderName = "c:\\backups\\" + i++.ToString("D4") + "-" + System.Guid.NewGuid().ToString();
+            BackupObj.CreateBackup();
+
+            BackupObj.BackupResult = aaBackup.EBackupResult.SeparateCSV;
+            BackupObj.BackupFolderName = "c:\\backups\\" + i++.ToString("D4") + "-" + System.Guid.NewGuid().ToString();
+            BackupObj.CreateBackup();
+
+
+            BackupObj.ObjectSelection = aaBackup.EObjectSelection.AllTemplates;
+
+            BackupObj.BackupResult = aaBackup.EBackupResult.SingleCSV;
+            BackupObj.BackupFileName = "c:\\backups\\" + i++.ToString("D4") + "-" + System.Guid.NewGuid().ToString();
+            BackupObj.CreateBackup();
+
+            BackupObj.BackupResult = aaBackup.EBackupResult.SingleAAPKG;
+            BackupObj.BackupFileName = "c:\\backups\\" + i++.ToString("D4") + "-" + System.Guid.NewGuid().ToString();
+            BackupObj.CreateBackup();
+
+            BackupObj.BackupResult = aaBackup.EBackupResult.SeparateAAPKG;
+            BackupObj.BackupFolderName = "c:\\backups\\" + i++.ToString("D4") + "-" + System.Guid.NewGuid().ToString();
+            BackupObj.CreateBackup();
+
+            BackupObj.BackupResult = aaBackup.EBackupResult.SeparateCSV;
+            BackupObj.BackupFolderName = "c:\\backups\\" + i++.ToString("D4") + "-" + System.Guid.NewGuid().ToString();
+            BackupObj.CreateBackup();
+                        
+            
+            BackupObj.ObjectSelection = aaBackup.EObjectSelection.ObjectList;
+            
+            BackupObj.BackupResult = aaBackup.EBackupResult.SingleCSV;
+            BackupObj.BackupFileName = "c:\\backups\\" + i++.ToString("D4") + "-" + System.Guid.NewGuid().ToString();
+            BackupObj.CreateBackup();
+
+            BackupObj.BackupResult = aaBackup.EBackupResult.SingleAAPKG;
+            BackupObj.BackupFileName = "c:\\backups\\" + i++.ToString("D4") + "-" + System.Guid.NewGuid().ToString();
+            BackupObj.CreateBackup();
+
+            BackupObj.BackupResult = aaBackup.EBackupResult.SeparateAAPKG;
+            BackupObj.BackupFolderName = "c:\\backups\\" + i++.ToString("D4") + "-" + System.Guid.NewGuid().ToString();
+            BackupObj.CreateBackup();
+
+            BackupObj.BackupResult = aaBackup.EBackupResult.SeparateCSV;
+            BackupObj.BackupFolderName = "c:\\backups\\" + i++.ToString("D4") + "-" + System.Guid.NewGuid().ToString();
+            BackupObj.CreateBackup();
+                }
+            catch(Exception ex)
+            {
+                throw ex;
+            }
+
         }
 
         private static int Setup()
         {
             try
             {                
-                // Instantiate the GR Access App
-                //_GRAccess = new GRAccessApp();
+                // Create any necessary setup code here
 
                 // Return success code
                 return 0;
@@ -172,46 +253,50 @@ namespace aaBackupConsole
         /// Process the arguments passed to the console program
         /// </summary>
         /// <param name="args"></param>
-        private static int ParseArguments(string[] args)
-        {
-            try
-            {
-                //Parse the Command Line
-                CommandLine.Utility.Arguments CommandLine = new CommandLine.Utility.Arguments(args);
+        //private static int ParseArguments(string[] args)
+        //{
+        //    try
+        //    {
+        //        //Parse the Command Line
+        //        CommandLine.Utility.Arguments CommandLine = new CommandLine.Utility.Arguments(args);
                 
-                // Verify parameters passed are legal then stuff into variables
-                CheckAndSetParameters(ref _GRNodeName, "GRNodeName", CommandLine,true,"localhost");
-                CheckAndSetParameters(ref _GalaxyName, "GalaxyName", CommandLine, true);                
-                CheckAndSetParameters(ref _Username, "Username", CommandLine, true,"");                
-                CheckAndSetParameters(ref _Password, "Password", CommandLine, true);                
-                CheckAndSetParameters(ref _BackupFileName, "BackupFileName", CommandLine, true);                
-                CheckAndSetParameters(ref _BackupType, "BackupType", CommandLine, true, "CompleteCAB");                
-                CheckAndSetParameters(ref _BackupFolderName, "BackupFolder", CommandLine, true);                
-                CheckAndSetParameters(ref _ObjectList, "ObjectList", CommandLine, true);
+        //        // Verify parameters passed are legal then stuff into variables
+        //        CheckAndSetParameters(ref _GRNodeName, "GRNodeName", CommandLine,true,"localhost");
+        //        CheckAndSetParameters(ref _GalaxyName, "GalaxyName", CommandLine, true);                
+        //        CheckAndSetParameters(ref _Username, "Username", CommandLine, true,"");                
+        //        CheckAndSetParameters(ref _Password, "Password", CommandLine, true);                
+        //        CheckAndSetParameters(ref _BackupFileName, "BackupFileName", CommandLine, true);                
+        //        CheckAndSetParameters(ref _BackupType, "BackupType", CommandLine, true, "CompleteCAB");                
+        //        CheckAndSetParameters(ref _BackupFolderName, "BackupFolder", CommandLine, true);                
+        //        CheckAndSetParameters(ref _ObjectList, "ObjectList", CommandLine, true);
                   
-                /*
-				NOT USED - TODO: Need to figure out what the intended purpose of this ws!				
-				CheckAndSetParameters(ref _FileDetail, "FileDetail", CommandLine, true);
-                */
+        //        /*
+        //        NOT USED - TODO: Need to figure out what the intended purpose of this ws!				
+        //        CheckAndSetParameters(ref _FileDetail, "FileDetail", CommandLine, true);
+        //        */
 
-                CheckAndSetParameters(ref _IncludeConfigVersion, "IncludeConfigVersion", CommandLine, true, "false");
-                CheckAndSetParameters(ref _FilterType, "FilterType", CommandLine, true);
-                CheckAndSetParameters(ref _Filter, "Filter", CommandLine, true);
-                CheckAndSetParameters(ref _PasswordToEncrypt, "PasswordToEncrypt", CommandLine, true);
-                CheckAndSetParameters(ref _EncryptedPassword, "EncryptedPassword", CommandLine, true);
-                CheckAndSetParameters(ref _ChangeLogTimestampStartFilter, "ChangeLogTimestampStartFilter", CommandLine, true, "1/1/1970");
-                CheckAndSetParameters(ref _CustomSQLSelection, "CustomSQLSelection", CommandLine, true,"");
-                CheckAndSetParameters(ref _OverwriteFiles, "OverwriteFiles", CommandLine, true, "true");
-                CheckAndSetParameters(ref _ObjectListFile, "ObjectListFile", CommandLine, true, "");
+        //        CheckAndSetParameters(ref _IncludeConfigVersion, "IncludeConfigVersion", CommandLine, true, "false");
+        //        CheckAndSetParameters(ref _FilterType, "FilterType", CommandLine, true);
+        //        CheckAndSetParameters(ref _Filter, "Filter", CommandLine, true);
+        //        CheckAndSetParameters(ref _PasswordToEncrypt, "PasswordToEncrypt", CommandLine, true);
+        //        CheckAndSetParameters(ref _EncryptedPassword, "EncryptedPassword", CommandLine, true);
+        //        CheckAndSetParameters(ref _ChangeLogTimestampStartFilter, "ChangeLogTimestampStartFilter", CommandLine, true, "1/1/1970");
+        //        CheckAndSetParameters(ref _CustomSQLSelection, "CustomSQLSelection", CommandLine, true,"");
+        //        CheckAndSetParameters(ref _OverwriteFiles, "OverwriteFiles", CommandLine, true, "true");
+        //        CheckAndSetParameters(ref _ObjectListFile, "ObjectListFile", CommandLine, true, "");
 
-                // Success
-                return 0;
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-        }
+        //        CheckAndSetParameters(ref _ObjectSelection, "ObjectSelection", CommandLine, true, "");
+        //        CheckAndSetParameters(ref _BackupResult, "BackupResult", CommandLine, true, "");
+
+
+        //        // Success
+        //        return 0;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        throw ex;
+        //    }
+        //}
 
         /// <summary>
         /// Review the command line parameters for a specific parameter
@@ -275,7 +360,7 @@ namespace aaBackupConsole
 
 				// Create the AES object using the local machine fingerprint and static vector
 				// This is necessary because we want to be able to reuse the encrypted password on the same machine				
-            	AES = new cSimpleAES(cSecurity.FingerPrint.Value(),false);
+            	AES = new cSimpleAES(cSecurity.cFingerPrint.Value(),false);
             	
                 // Encrypt the passed value
                 EncryptedPassword = AES.EncryptToString(PasswordToEncrypt);
@@ -316,7 +401,7 @@ namespace aaBackupConsole
             {
 				// Create the AES object using the local machine fingerprint and static vector
 				// This is necessary because we want to be able to reuse the encrypted password on the same machine				
-            	AES = new cSimpleAES(cSecurity.FingerPrint.Value(),false);
+            	AES = new cSimpleAES(cSecurity.cFingerPrint.Value(),false);
 
                 // Return the decrypted string
                 return AES.DecryptString(EncryptedPassword);
