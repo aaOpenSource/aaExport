@@ -1,3 +1,6 @@
+
+TODO: REVISIT THIS AFTER REFACTORS TO UPDATE FOR NEW SWITCHES
+
 Command Line Switches
 
 /GRNodeName					Node name for Galaxy Repository (String)
