@@ -64,7 +64,7 @@ namespace Classes.Encryption
 	    public cSimpleAES(string StringSeed)
 	    {	    	    	
 	    	// Create the fingerprint with the additional seed information
-	        Key = Classes.Encryption.cSecurity.FingerPrint.ValueAsByteArray(32,StringSeed);
+	        Key = Classes.Encryption.cSecurity.cFingerPrint.ValueAsByteArray(32,StringSeed);
 	        Vector = GenerateEncryptionVector();
 	        
 	        // Call the rest of the functions required to complete the constructor
@@ -79,7 +79,7 @@ namespace Classes.Encryption
 	    {	    	
 
 	        // Create the fingerprint with the additional seed information
-	        Key = Classes.Encryption.cSecurity.FingerPrint.ValueAsByteArray(32,StringSeed);
+	        Key = Classes.Encryption.cSecurity.cFingerPrint.ValueAsByteArray(32,StringSeed);
 	        
 	        if(autoGenerateVector)
 	        {

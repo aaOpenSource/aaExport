@@ -15,7 +15,7 @@ namespace Classes.Encryption
         /// Example: 4876-8DB5-EE85-69D3-FE52-8CF7-395D-2EA9
         /// <![CDATA[ FROM http://www.codeproject.com/KB/cs/GenerateUniqueKey.aspx ]]>
         /// </summary>
-        public static class FingerPrint
+        public static class cFingerPrint
         {
             private static string fingerPrint = string.Empty;
 
@@ -80,7 +80,7 @@ namespace Classes.Encryption
                 return s;
             }
             
-            #region Original Device ID Getting Code
+            #region Device ID Code
             //Return a hardware identifier
             private static string identifier
             (string wmiClass, string wmiProperty, string wmiMustBeTrue)
