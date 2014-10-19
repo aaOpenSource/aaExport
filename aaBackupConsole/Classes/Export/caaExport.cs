@@ -10,7 +10,7 @@ using Classes.GalaxyHelper;
 
 namespace Classes.Export
 {
-    class aaExport
+    class caaExport
     {
 
         #region Declarations
@@ -41,9 +41,9 @@ namespace Classes.Export
 
         #region Constructors
 
-        public aaExport(){}
+        public caaExport(){}
 
-        public aaExport(IGalaxy Galaxy)
+        public caaExport(IGalaxy Galaxy)
         {
             this.Galaxy = Galaxy;
         }
