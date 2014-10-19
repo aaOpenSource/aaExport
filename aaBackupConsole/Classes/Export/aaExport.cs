@@ -8,9 +8,9 @@ using ArchestrA.GRAccess;
 using Classes.ObjectList;
 using Classes.GalaxyHelper;
 
-namespace Classes.Backup
+namespace Classes.Export
 {
-    class aaBackup
+    class aaExport
     {
 
         #region Declarations
@@ -41,9 +41,9 @@ namespace Classes.Backup
 
         #region Constructors
 
-        public aaBackup(){}
+        public aaExport(){}
 
-        public aaBackup(IGalaxy Galaxy)
+        public aaExport(IGalaxy Galaxy)
         {
             this.Galaxy = Galaxy;
         }
