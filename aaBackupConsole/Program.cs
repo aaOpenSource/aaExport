@@ -16,9 +16,11 @@ using Classes.Encryption;
 using Classes.Export;
 using Classes.GalaxyHelper;
 
+[assembly: log4net.Config.XmlConfigurator(ConfigFile = "log.config", Watch = true)]
 
 namespace aaBackupConsole
 {
+
     class Program
     {
 
@@ -31,34 +33,33 @@ namespace aaBackupConsole
         /// GR Access Class
         /// Used for accessing GR functionality
         /// </summary>
-        //static GRAccessApp _GRAccess;
-        //static IGalaxy _Galaxy;
-        
+        static GRAccessApp _GRAccess;
+        static IGalaxy _Galaxy;
+
         // Parameters passed by command line argument or file
 
         /// <summary>
         /// GR Hostname
         /// </summary>
-        //static string _GRNodeName;
-        //static string _GalaxyName;
-        //static string _Username;
-        //static string _Password;
-        //static string _BackupFileName;
-        //static string _BackupFolderName;
-        //static string _ObjectList;
-        //static string _BackupType;       
-        //static string _IncludeConfigVersion;
-        //static string _FilterType;
-        //static string _Filter;
-        //static string _PasswordToEncrypt;
-        //static string _EncryptedPassword;
-        //static string _ChangeLogTimestampStartFilter;
-        //static string _CustomSQLSelection;
-        //static string _OverwriteFiles;
-        //static string _ObjectListFile;
-        //static string _ObjectSelection;
-        //static string _BackupResult;
-
+        static string _GRNodeName;
+        static string _GalaxyName;
+        static string _Username;
+        static string _Password;
+        static string _BackupFileName;
+        static string _BackupFolderName;
+        static string _ObjectList;
+        static string _BackupType;
+        static string _IncludeConfigVersion;
+        static string _FilterType;
+        static string _Filter;
+        static string _PasswordToEncrypt;
+        static string _EncryptedPassword;
+        static string _ChangeLogTimestampStartFilter;
+        static string _CustomSQLSelection;
+        static string _OverwriteFiles;
+        static string _ObjectListFile;
+        static string _ObjectSelection;
+        static string _BackupResult;
         
         static CommandLine.Utility.Arguments _args;
         
@@ -75,53 +76,61 @@ namespace aaBackupConsole
                 log4net.Config.BasicConfigurator.Configure();
 
                 log.Info("Starting aaBackup");
-
-
-                // Run the tests
-                RunTest();
-
-                return;
-
-
+                
                 // First store off the arguments
                 _args = new CommandLine.Utility.Arguments(args);
 
                 // Parse the input parameters
-                //ParseArguments(args);
+                ParseArguments(args);
 
                 // First call the setup routine
                 Setup();
 
-                // If the user has passed us a password to encrypt then do that and  bail out.
-                //if (_PasswordToEncrypt.Length > 0)
-                //{
-                //    log.Info("Encrypting password");
-                //    WriteEncryptedPassword(_PasswordToEncrypt);
-                //    log.Info("Password encryption complete");
-                //    return;
-                //}
+                //If the user has passed us a password to encrypt then do that and  bail out.
+                if (_PasswordToEncrypt.Length > 0)
+                {
+                    log.Info("Encrypting password");
+                    WriteEncryptedPassword(_PasswordToEncrypt);
+                    log.Info("Password encryption complete");
+                    return;
+                }
 
-                //// If the user has passed an encrypted password then decrypt it 
-                //// and set it to the current working password
-                //if (_EncryptedPassword.Length > 0)
-                //{
-                //    log.Info("Decrypting password");
-                    
-                //    // Set the password to the the decrypted password
-                //    _Password = DecryptPassword(_EncryptedPassword);
-                //}
+                // If the user has passed an encrypted password then decrypt it 
+                // and set it to the current working password
+                if (_EncryptedPassword.Length > 0)
+                {
+                    log.Info("Decrypting password");
 
+                    // Set the password to the the decrypted password
+                    _Password = DecryptPassword(_EncryptedPassword);
+                }
 
+                // Instantiate the Object
+                caaExport BackupObj = new caaExport();
+                
+                // Set the parms
+               
+                BackupObj.GRNodeName = _GRNodeName;
+                BackupObj.GalaxyName = _GalaxyName;
+                BackupObj.Username = _Username;
+                BackupObj.Password = _Password;
+                //BackupObj.BackupFolderName = _BackupFolderName;
+                //BackupObj.BackupType = _BackupType;
+                //BackupObj.ChangeLogTimestampStartFilter = DateTime.Parse(_ChangeLogTimestampStartFilter);
 
+                BackupObj.Connect();
+
+                BackupObj.BackupCompleteCAB(_BackupFileName);
             }
             catch (Exception ex)
             {
                 log.Error(ex);
             }
             finally
-            {                
-                Console.WriteLine("Enter to Continue to Finish");
-                Console.ReadLine();
+            {
+                log.Info("Backup complete");        
+                //Console.WriteLine("Enter to Continue to Finish");
+                //Console.ReadLine();
             }
         }
 
@@ -139,7 +148,7 @@ namespace aaBackupConsole
 
             // Set the parms
             BackupObj.GRNodeName = "localhost";
-            BackupObj.GalaxyName = "PICS";
+            BackupObj.GalaxyName = "TEST";
             BackupObj.Username = "";
             BackupObj.Password = "";
 
@@ -253,50 +262,50 @@ namespace aaBackupConsole
         /// Process the arguments passed to the console program
         /// </summary>
         /// <param name="args"></param>
-        //private static int ParseArguments(string[] args)
-        //{
-        //    try
-        //    {
-        //        //Parse the Command Line
-        //        CommandLine.Utility.Arguments CommandLine = new CommandLine.Utility.Arguments(args);
-                
-        //        // Verify parameters passed are legal then stuff into variables
-        //        CheckAndSetParameters(ref _GRNodeName, "GRNodeName", CommandLine,true,"localhost");
-        //        CheckAndSetParameters(ref _GalaxyName, "GalaxyName", CommandLine, true);                
-        //        CheckAndSetParameters(ref _Username, "Username", CommandLine, true,"");                
-        //        CheckAndSetParameters(ref _Password, "Password", CommandLine, true);                
-        //        CheckAndSetParameters(ref _BackupFileName, "BackupFileName", CommandLine, true);                
-        //        CheckAndSetParameters(ref _BackupType, "BackupType", CommandLine, true, "CompleteCAB");                
-        //        CheckAndSetParameters(ref _BackupFolderName, "BackupFolder", CommandLine, true);                
-        //        CheckAndSetParameters(ref _ObjectList, "ObjectList", CommandLine, true);
-                  
-        //        /*
-        //        NOT USED - TODO: Need to figure out what the intended purpose of this ws!				
-        //        CheckAndSetParameters(ref _FileDetail, "FileDetail", CommandLine, true);
-        //        */
+        private static int ParseArguments(string[] args)
+        {
+            try
+            {
+                //Parse the Command Line
+                CommandLine.Utility.Arguments CommandLine = new CommandLine.Utility.Arguments(args);
 
-        //        CheckAndSetParameters(ref _IncludeConfigVersion, "IncludeConfigVersion", CommandLine, true, "false");
-        //        CheckAndSetParameters(ref _FilterType, "FilterType", CommandLine, true);
-        //        CheckAndSetParameters(ref _Filter, "Filter", CommandLine, true);
-        //        CheckAndSetParameters(ref _PasswordToEncrypt, "PasswordToEncrypt", CommandLine, true);
-        //        CheckAndSetParameters(ref _EncryptedPassword, "EncryptedPassword", CommandLine, true);
-        //        CheckAndSetParameters(ref _ChangeLogTimestampStartFilter, "ChangeLogTimestampStartFilter", CommandLine, true, "1/1/1970");
-        //        CheckAndSetParameters(ref _CustomSQLSelection, "CustomSQLSelection", CommandLine, true,"");
-        //        CheckAndSetParameters(ref _OverwriteFiles, "OverwriteFiles", CommandLine, true, "true");
-        //        CheckAndSetParameters(ref _ObjectListFile, "ObjectListFile", CommandLine, true, "");
+                // Verify parameters passed are legal then stuff into variables
+                CheckAndSetParameters(ref _GRNodeName, "GRNodeName", CommandLine, true, System.Net.Dns.GetHostName());
+                CheckAndSetParameters(ref _GalaxyName, "GalaxyName", CommandLine, true);
+                CheckAndSetParameters(ref _Username, "Username", CommandLine, true, "");
+                CheckAndSetParameters(ref _Password, "Password", CommandLine, true);
+                CheckAndSetParameters(ref _BackupFileName, "BackupFileName", CommandLine, true);
+                CheckAndSetParameters(ref _BackupType, "BackupType", CommandLine, true, "CompleteCAB");
+                CheckAndSetParameters(ref _BackupFolderName, "BackupFolder", CommandLine, true);
+                CheckAndSetParameters(ref _ObjectList, "ObjectList", CommandLine, true);
 
-        //        CheckAndSetParameters(ref _ObjectSelection, "ObjectSelection", CommandLine, true, "");
-        //        CheckAndSetParameters(ref _BackupResult, "BackupResult", CommandLine, true, "");
+                /*
+                NOT USED - TODO: Need to figure out what the intended purpose of this ws!				
+                CheckAndSetParameters(ref _FileDetail, "FileDetail", CommandLine, true);
+                */
+
+                CheckAndSetParameters(ref _IncludeConfigVersion, "IncludeConfigVersion", CommandLine, true, "false");
+                CheckAndSetParameters(ref _FilterType, "FilterType", CommandLine, true);
+                CheckAndSetParameters(ref _Filter, "Filter", CommandLine, true);
+                CheckAndSetParameters(ref _PasswordToEncrypt, "PasswordToEncrypt", CommandLine, true);
+                CheckAndSetParameters(ref _EncryptedPassword, "EncryptedPassword", CommandLine, true);
+                CheckAndSetParameters(ref _ChangeLogTimestampStartFilter, "ChangeLogTimestampStartFilter", CommandLine, true, "1/1/1970");
+                CheckAndSetParameters(ref _CustomSQLSelection, "CustomSQLSelection", CommandLine, true, "");
+                CheckAndSetParameters(ref _OverwriteFiles, "OverwriteFiles", CommandLine, true, "true");
+                CheckAndSetParameters(ref _ObjectListFile, "ObjectListFile", CommandLine, true, "");
+
+                CheckAndSetParameters(ref _ObjectSelection, "ObjectSelection", CommandLine, true, "");
+                CheckAndSetParameters(ref _BackupResult, "BackupResult", CommandLine, true, "");
 
 
-        //        // Success
-        //        return 0;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        throw ex;
-        //    }
-        //}
+                // Success
+                return 0;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
 
         /// <summary>
         /// Review the command line parameters for a specific parameter

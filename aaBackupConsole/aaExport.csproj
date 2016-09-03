@@ -67,8 +67,9 @@
       <HintPath>..\..\..\..\Program Files (x86)\Common Files\ArchestrA\ArchestrA.GRAccess.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="log4net">
+    <Reference Include="log4net, Version=1.2.13.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
       <HintPath>..\packages\log4net.2.0.3\lib\net40-full\log4net.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
@@ -76,8 +77,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Classes\Backup\aaBackup.cs" />
     <Compile Include="Classes\CommandLineParser\cCommandLineParser.cs" />
+    <Compile Include="Classes\Export\caaExport.cs" />
     <Compile Include="Classes\Galaxy\aaGalaxyHelpers.cs" />
     <Compile Include="Classes\ObjectList\cObjectList.cs" />
     <Compile Include="Classes\Encryption\cSecurity.cs" />
@@ -89,7 +90,12 @@
     <None Include="Help.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="app.config" />
+    <None Include="app.config">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="log.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup />

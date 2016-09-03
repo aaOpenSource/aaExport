@@ -702,15 +702,25 @@ namespace Classes.Export
                     return -2;
                 }
 
+
+                var obj = _galaxy.GetGalaxyConfiguration();
+
+
                 log.Info("Starting CAB Backup to " + BackupFileName);
 
                 // Call complete backup routine
                 _galaxy.Backup(ProcessId, BackupFileName, this.GRNodeName, _galaxy.Name);
 
-                log.Info("Backup CAB Complete");
-
-                // Success
-                return 0;
+                if (_galaxy.CommandResult.Successful)
+                {
+                    log.Info("Backup CAB Complete");
+                    return 0;
+                }
+                else
+                {
+                    log.Error(_galaxy.CommandResult.Text);
+                    return -1;
+                }
             }
             catch (Exception ex)
             {

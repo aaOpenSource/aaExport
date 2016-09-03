@@ -86,7 +86,7 @@ namespace Classes.GalaxyHelper
                 log.Debug("Logging in with Username " + UserName);
 
                 // Attempt to Login
-                galaxy.Login(UserName, Password);
+                galaxy.LoginEx(UserName, Password,false);
 
                 log.Debug("Checking for login success");
 
